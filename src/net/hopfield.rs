@@ -1,10 +1,5 @@
 #![allow(clippy::needless_range_loop)]
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum TestEnd {
-    Stable,
-    Cycle,
-}
+use crate::net::utility::{TestEnd, Utils};
 
 /// HOPFIELD STRUCT
 pub struct Hopfield {
@@ -15,7 +10,7 @@ pub struct Hopfield {
 /// HOPFIELD MAIN FUNCTIONS
 impl Hopfield {
     pub fn new_hebb(patterns: &Vec<Vec<f32>>) -> Self {
-        let n: usize = Self::pattern_validate(patterns);
+        let n: usize = Utils::pattern_validate(patterns);
         Self {
             n,
             weights: Self::weights_hebb(patterns, n),
@@ -27,7 +22,7 @@ impl Hopfield {
         epoch_count: usize,
         tol: f32,
     ) -> Self {
-        let n: usize = Self::pattern_validate(patterns);
+        let n: usize = Utils::pattern_validate(patterns);
         Self {
             n,
             weights: Self::weights_oja(patterns, n, learning_rate, epoch_count, tol),
@@ -46,33 +41,9 @@ impl Hopfield {
 /// HOPFIELD UTILITY FUNCTIONS
 impl Hopfield {
     /// VALIDATION
-    fn pattern_validate(patterns: &Vec<Vec<f32>>) -> usize {
-        if patterns.is_empty() {
-            panic!("Empty patterns!");
-        }
-        if patterns[0].is_empty() {
-            panic!("First pattern empty!");
-        }
-        let pattern_len: usize = patterns[0].len();
-        for pattern in patterns {
-            if pattern.len() != pattern_len {
-                panic!("Different patterns length!");
-            }
-        }
-        pattern_len
-    }
     fn test_validate(&self, probe: &[f32]) {
         if self.n != probe.len() {
             panic!("Given test pattern length doesn't match!");
-        }
-    }
-    fn sign(value: f32, old: f32) -> f32 {
-        if 0.0 < value {
-            1.0
-        } else if value < 0.0 {
-            -1.0
-        } else {
-            old
         }
     }
 
@@ -173,7 +144,7 @@ impl Hopfield {
                     }
                     value += weight * last_probe[idx];
                 }
-                *cond = Self::sign(value, *cond);
+                *cond = Utils::sign(value, *cond);
             }
             if *probe == last_probe {
                 return (history, TestEnd::Stable);
@@ -188,17 +159,18 @@ impl Hopfield {
     fn async_test(&self, probe: &mut Vec<f32>) -> Vec<Vec<f32>> {
         let mut history: Vec<Vec<f32>> = vec![probe.clone()];
         let mut last_probe: Vec<f32>;
+        let mut value: f32;
         loop {
             last_probe = probe.clone();
             for row_idx in 0..probe.len() {
-                let mut value: f32 = 0.0;
+                value = 0.0;
                 for (idx, weight) in self.weights[row_idx].iter().enumerate() {
                     if row_idx == idx {
                         continue;
                     }
                     value += weight * probe[idx];
                 }
-                probe[row_idx] = Self::sign(value, probe[row_idx]);
+                probe[row_idx] = Utils::sign(value, probe[row_idx]);
             }
             if *probe == last_probe {
                 return history;
