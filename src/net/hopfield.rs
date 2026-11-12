@@ -64,6 +64,40 @@ impl Hopfield {
         }
         weights
     }
+    // fn weights_oja(
+    //     patterns: &Vec<Vec<f32>>,
+    //     n: usize,
+    //     learning_rate: f32,
+    //     epoch_count: usize,
+    //     tol: f32,
+    // ) -> Vec<Vec<f32>> {
+    //     let mut weights: Vec<Vec<f32>> = Self::weights_hebb(patterns, n);
+    //     for _ in 0..epoch_count {
+    //         let mut max_change: f32 = 0.0;
+    //         for pattern in patterns {
+    //             let y: Vec<f32> = Self::matrix_times_vector(&weights, pattern);
+    //             let v: Vec<f32> = Self::matrix_t_times_vector(&weights, &y);
+    //             for i in 0..n {
+    //                 for j in 0..n {
+    //                     if i == j {
+    //                         continue;
+    //                     }
+    //                     let d: f32 = learning_rate * y[i] * (pattern[j] - v[j]);
+    //                     if !d.is_finite() {
+    //                         panic!("Oja: weights diverged (NaN/inf), decrease learning_rate!");
+    //                     }
+    //                     weights[i][j] += d;
+    //                     max_change = max_change.max(d.abs());
+    //                 }
+    //             }
+    //         }
+    //         Self::sym(&mut weights, n);
+    //         if max_change < tol {
+    //             break;
+    //         }
+    //     }
+    //     weights
+    // }
     fn weights_oja(
         patterns: &Vec<Vec<f32>>,
         n: usize,
@@ -72,6 +106,23 @@ impl Hopfield {
         tol: f32,
     ) -> Vec<Vec<f32>> {
         let mut weights: Vec<Vec<f32>> = Self::weights_hebb(patterns, n);
+        let mut max_row_sum: f32 = 0.0;
+        for i in 0..n {
+            let mut row_sum: f32 = 0.0;
+            for j in 0..n {
+                row_sum += weights[i][j].abs();
+            }
+            max_row_sum = max_row_sum.max(row_sum);
+        }
+        if max_row_sum > 0.0 {
+            for i in 0..n {
+                for j in 0..n {
+                    weights[i][j] /= max_row_sum;
+                }
+            }
+        }
+        let eta: f32 = learning_rate / n as f32;
+
         for _ in 0..epoch_count {
             let mut max_change: f32 = 0.0;
             for pattern in patterns {
@@ -82,7 +133,7 @@ impl Hopfield {
                         if i == j {
                             continue;
                         }
-                        let d: f32 = learning_rate * y[i] * (pattern[j] - v[j]);
+                        let d: f32 = eta * y[i] * (pattern[j] - v[j]);
                         if !d.is_finite() {
                             panic!("Oja: weights diverged (NaN/inf), decrease learning_rate!");
                         }
@@ -98,6 +149,8 @@ impl Hopfield {
         }
         weights
     }
+
+
     fn matrix_times_vector(matrix: &[Vec<f32>], vec: &[f32]) -> Vec<f32> {
         let mut new_vec: Vec<f32> = vec![0.0; vec.len()];
         for (row_idx, row_values) in matrix.iter().enumerate() {

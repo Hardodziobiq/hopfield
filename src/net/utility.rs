@@ -1,7 +1,7 @@
+use rand::Rng;
+use rand::seq::SliceRandom;
 use std::fs;
 use std::path::Path;
-use rand::seq::SliceRandom;
-use rand::Rng;
 
 /// UTILS FUNCTIONS
 pub struct Utils;
@@ -48,7 +48,12 @@ impl Utils {
                 pattern.push(value.trim().parse::<f32>().expect("Not a number!"));
             }
             if pattern.len() != width * height {
-                panic!("Pattern length {} doesn't match {}x{}!", pattern.len(), width, height);
+                panic!(
+                    "Pattern length {} doesn't match {}x{}!",
+                    pattern.len(),
+                    width,
+                    height
+                );
             }
             patterns.push(pattern);
         }
@@ -70,7 +75,11 @@ impl Utils {
     }
 
     /// NOISE PATTERNS
-    pub fn add_noise_all(patterns: &[Vec<f32>], fraction: f32, rng: &mut impl Rng) -> Vec<Vec<f32>> {
+    pub fn add_noise_all(
+        patterns: &[Vec<f32>],
+        fraction: f32,
+        rng: &mut impl Rng,
+    ) -> Vec<Vec<f32>> {
         let mut noisy: Vec<Vec<f32>> = Vec::new();
         for pattern in patterns {
             noisy.push(Self::add_noise(pattern, fraction, rng));
