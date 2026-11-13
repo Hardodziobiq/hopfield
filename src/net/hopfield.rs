@@ -150,7 +150,6 @@ impl Hopfield {
         weights
     }
 
-
     fn matrix_times_vector(matrix: &[Vec<f32>], vec: &[f32]) -> Vec<f32> {
         let mut new_vec: Vec<f32> = vec![0.0; vec.len()];
         for (row_idx, row_values) in matrix.iter().enumerate() {
