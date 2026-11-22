@@ -4,7 +4,7 @@ use crate::net::utility::{Dataset, Mode, OJA_EPOCHS, OJA_LR, OJA_TOL, SEED, Util
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
 
-/// TEST 2: prawie identyczne wzorce 25x25 vs 25x50 (punkt 3 projektu)
+/// TEST 2: nearly identical 25x25 and 25x50 patterns (project item 3)
 pub struct CommonBlockTest;
 
 impl CommonBlockTest {
@@ -13,10 +13,10 @@ impl CommonBlockTest {
 
     pub fn run(datasets: &[Dataset]) {
         Utils::print_header(
-            "TEST 2: prawie identyczne wzorce 25x25 vs 25x50",
-            "Sprawdzamy, czym różnią się oba zbiory, jak to wpływa na podobieństwo\n\
-             wzorców i na odtwarzanie z szumu. Eksperyment kontrolny: 25x50, w którym\n\
-             dolny blok jest losowy i inny dla każdego wzorca (zamiast wspólnego).",
+            "TEST 2: nearly identical 25x25 and 25x50 patterns",
+            "We compare the two datasets and measure how their differences affect\n\
+             pattern similarity and recovery from noise. The 25x50 control uses\n\
+             a different random bottom block for each pattern.",
         );
         let small: &Dataset = Utils::find_dataset(datasets, Self::SMALL_SET);
         let big: &Dataset = Utils::find_dataset(datasets, Self::BIG_SET);
@@ -28,24 +28,21 @@ impl CommonBlockTest {
         let control: Vec<Vec<f32>> = Self::random_block_set(small, big, &mut rng);
         let variants: [(&str, &Vec<Vec<f32>>); 3] = [
             ("25x25", &small.patterns),
-            ("25x50 wspólny blok", &big.patterns),
-            ("25x50 losowy blok", &control),
+            ("25x50 shared block", &big.patterns),
+            ("25x50 random block", &control),
         ];
         let nets: Vec<(Hopfield, Hopfield)> = Self::stability(&variants);
         Self::noise_recovery(&variants, &nets, &mut rng);
     }
 
-    /// 2a. górna połowa 25x50 vs wzorzec 25x25, dolna połowa
+    /// 2a. Compare the top half of 25x50 with the 25x25 pattern and inspect the bottom half
     fn structure(small: &Dataset, big: &Dataset) {
         let n_small: usize = small.width * small.height;
         let n_big: usize = big.width * big.height;
-        println!("-- 2a. Struktura wzorców 25x50 --");
-        println!("górna różn.  = ile pikseli górnej połowy różni się od wzorca 25x25");
-        println!("dolna czarne = % czarnych pikseli w dolnej połowie\n");
-        println!(
-            "{:<10}{:>14}{:>15}",
-            "wzorzec", "górna różn.", "dolna czarne"
-        );
+        println!("-- 2a. Structure of the 25x50 patterns --");
+        println!("top diff.    = top-half pixels that differ from the 25x25 pattern");
+        println!("bottom black = percentage of black pixels in the bottom half\n");
+        println!("{:<10}{:>14}{:>15}", "pattern", "top diff.", "bottom black");
         println!("{}", "-".repeat(39));
         for idx in 0..small.patterns.len() {
             let ps: &Vec<f32> = &small.patterns[idx];
@@ -61,14 +58,14 @@ impl CommonBlockTest {
         }
     }
 
-    /// 2b. podobieństwo każdej pary: zmierzone vs przewidziane (o + 1) / 2
+    /// 2b. Compare observed pairwise overlap with the prediction (o + 1) / 2
     fn pair_overlaps(small: &Dataset, big: &Dataset) {
-        println!("\n-- 2b. Podobieństwo par: zmierzone vs przewidziane --");
-        println!("o = x_p·x_q / n ze znakiem (ujemne = wzorce 'przeciwne')");
-        println!("jeśli dolny blok jest wspólny: o_25x50 = (o_25x25 + 1) / 2\n");
+        println!("\n-- 2b. Observed and predicted pairwise overlap --");
+        println!("o = x_p·x_q / n retains the sign (negative values indicate opposing patterns)");
+        println!("With a shared bottom block, o_25x50 = (o_25x25 + 1) / 2\n");
         println!(
             "{:<8}{:>11}{:>11}{:>13}",
-            "para", "o 25x25", "o 25x50", "przewidyw."
+            "pair", "o 25x25", "o 25x50", "predicted"
         );
         println!("{}", "-".repeat(43));
         for p in 0..small.patterns.len() {
@@ -86,12 +83,12 @@ impl CommonBlockTest {
         }
     }
 
-    /// 2c. stabilność dla trzech wariantów (sieci zwracamy do 2d)
+    /// 2c. Measure stability for each variant and return the networks for 2d
     fn stability(variants: &[(&str, &Vec<Vec<f32>>); 3]) -> Vec<(Hopfield, Hopfield)> {
-        println!("\n-- 2c. Stabilność wzorców --\n");
+        println!("\n-- 2c. Pattern stability --\n");
         println!(
             "{:<22}{:>6}{:>9}{:>10}{:>10}",
-            "wariant", "n", "podob.", "Hebb", "Oja"
+            "variant", "n", "overlap", "Hebb", "Oja"
         );
         println!("{}", "-".repeat(57));
         let mut nets: Vec<(Hopfield, Hopfield)> = Vec::new();
@@ -115,13 +112,13 @@ impl CommonBlockTest {
         nets
     }
 
-    /// 2d. odtwarzanie z szumu dla trzech wariantów
+    /// 2d. Measure recovery from noise for each variant
     fn noise_recovery(
         variants: &[(&str, &Vec<Vec<f32>>); 3],
         nets: &[(Hopfield, Hopfield)],
         rng: &mut StdRng,
     ) {
-        println!("\n-- 2d. Odtwarzanie z szumu (odsetek dokładnie odtworzonych) --\n");
+        println!("\n-- 2d. Recovery from noise (fraction recovered exactly) --\n");
         for ((name, patterns), (hebb, oja)) in variants.iter().zip(nets.iter()) {
             println!("{}:", name);
             Utils::print_levels_header();

@@ -2,18 +2,18 @@
 use crate::net::hopfield::Hopfield;
 use crate::net::utility::{Dataset, OJA_EPOCHS, OJA_LR, OJA_TOL, Utils};
 
-/// TEST 1: skuteczność reguł uczenia, liczba stabilnych wzorców i dlaczego
-/// wzorce nie są stabilne (punkty 1 i 2 projektu)
+/// TEST 1: learning rule performance, how many patterns are stable and why
+/// some patterns are unstable (project items 1 and 2)
 pub struct StabilityTest;
 
 impl StabilityTest {
     pub fn run(datasets: &[Dataset]) {
         Utils::print_header(
-            "TEST 1: skuteczność reguł uczenia i stabilność wzorców",
-            "Wzorzec uczący jest stabilny, jeśli podany na wejście sieci nie zmienia\n\
-             się w żadnym neuronie (sign(W·x) = x). Hebb: pobudzenie neuronu =\n\
-             sygnał (~1 - N/n) + przesłuch od pozostałych wzorców, proporcjonalny\n\
-             do ich podobieństwa. Porównujemy Hebba i Oję na dostarczonych zbiorach.",
+            "TEST 1: learning rule performance and pattern stability",
+            "A training pattern is stable if the network leaves every neuron\n\
+             unchanged (sign(W·x) = x). Under Hebb, the local field combines\n\
+             the signal (~1 - N/n) and crosstalk proportional to pattern similarity.\n\
+             We compare Hebb and Oja on the supplied datasets.",
         );
         let mut nets: Vec<(Hopfield, Hopfield)> = Vec::new();
         for ds in datasets {
@@ -26,12 +26,12 @@ impl StabilityTest {
         Self::cardinality(datasets);
     }
 
-    /// 1a. cechy zbiorów i liczba stabilnych wzorców
+    /// 1a. dataset properties and number of stable patterns
     fn summary(datasets: &[Dataset], nets: &[(Hopfield, Hopfield)]) {
-        println!("-- 1a. Podsumowanie (sieć uczona na całym zbiorze) --\n");
+        println!("-- 1a. Summary (trained on the full dataset) --\n");
         println!(
             "{:<24}{:>6}{:>5}{:>7}{:>9}{:>9}{:>8}{:>8}{:>8}",
-            "zbiór", "n", "N", "N/n", "aktywn.", "wspólne", "podob.", "Hebb", "Oja"
+            "dataset", "n", "N", "N/n", "activity", "shared", "overlap", "Hebb", "Oja"
         );
         println!("{}", "-".repeat(84));
         for (ds, (hebb, oja)) in datasets.iter().zip(nets.iter()) {
@@ -50,22 +50,18 @@ impl StabilityTest {
                 format!("{}/{}", Utils::count_stable(oja, &ds.patterns), big_n),
             );
         }
-        println!(
-            "\nN/n     = obciążenie sieci (pojemność teoretyczna dla losowych wzorców ~0.138)"
-        );
-        println!("aktywn. = średni udział czarnych pikseli (0.5 = zrównoważone)");
-        println!("wspólne = % pikseli, które mają ten sam kolor we WSZYSTKICH wzorcach");
-        println!("podob.  = średnie |x_p·x_q|/n po parach wzorców (0 = różne, 1 = identyczne)");
+        println!("\nN/n     = network load (theoretical capacity for random patterns ~0.138)");
+        println!("activity = mean fraction of black pixels (0.5 means balanced)");
+        println!("shared  = percentage of pixels with the same color in every pattern");
+        println!("overlap = mean |x_p·x_q|/n across pairs (1 for identical or opposite patterns)");
     }
 
-    /// 1b. który wzorzec jest niestabilny, jak bardzo i czy ma podobnego "bliźniaka"
+    /// 1b. Which patterns are unstable, how many pixels flip, and which pattern is closest
     fn per_pattern(datasets: &[Dataset], nets: &[(Hopfield, Hopfield)]) {
-        println!("\n-- 1b. Szczegóły per wzorzec --");
-        println!("nr        = numer wzorca");
-        println!("Hebb, Oja = 'ok' albo ile pikseli zmienia się w pierwszym kroku");
-        println!(
-            "bliźn.    = numer najbardziej podobnego wzorca, podob. = podobieństwo do niego\n"
-        );
+        println!("\n-- 1b. Per-pattern details --");
+        println!("index     = pattern index");
+        println!("Hebb, Oja = 'ok' or the number of pixels that flip in the first step");
+        println!("closest   = index of the most similar pattern, overlap = similarity to it\n");
         for (ds, (hebb, oja)) in datasets.iter().zip(nets.iter()) {
             let mut nr_cells: Vec<String> = Vec::new();
             let mut hebb_cells: Vec<String> = Vec::new();
@@ -81,19 +77,19 @@ impl StabilityTest {
                 sim_cells.push(format!("{:.2}", sim));
             }
             println!("{}:", ds.name);
-            Utils::print_cells(&format!("  {:<7}", "nr"), &nr_cells);
+            Utils::print_cells(&format!("  {:<7}", "index"), &nr_cells);
             Utils::print_cells(&format!("  {:<7}", "Hebb"), &hebb_cells);
             Utils::print_cells(&format!("  {:<7}", "Oja"), &oja_cells);
-            Utils::print_cells(&format!("  {:<7}", "bliźn."), &twin_cells);
-            Utils::print_cells(&format!("  {:<7}", "podob."), &sim_cells);
+            Utils::print_cells(&format!("  {:<7}", "closest"), &twin_cells);
+            Utils::print_cells(&format!("  {:<7}", "overlap"), &sim_cells);
         }
     }
 
-    /// 1c. ile wzorców jest stabilnych przy uczeniu na pierwszych k
+    /// 1c. Number of stable patterns after training on the first k
     fn cardinality(datasets: &[Dataset]) {
-        println!("\n-- 1c. Wpływ liczby wzorców --");
-        println!("Uczymy na pierwszych k wzorcach zbioru i liczymy, ile z tych k jest stabilnych.");
-        println!("(dla dużych zbiorów Oja liczy się chwilę)\n");
+        println!("\n-- 1c. Effect of training set size --");
+        println!("Train on the first k patterns and count how many of them are stable.");
+        println!("(Oja training may take a moment on large datasets)\n");
         for ds in datasets {
             let mut ks: Vec<String> = Vec::new();
             let mut hebb_cells: Vec<String> = Vec::new();

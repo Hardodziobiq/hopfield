@@ -8,7 +8,7 @@ use hopfield::net::utility::{Mode, SEED, TestEnd, Utils};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
-pub const USAGE: &str = "viz ZBIÓR INDEKS hebb|oja sync|async SZUM_PROCENT WYNIK.html [WEJŚCIE]";
+pub const USAGE: &str = "viz DATASET INDEX hebb|oja sync|async NOISE_PERCENT OUTPUT.html [INPUT]";
 
 pub fn run(args: &[String]) -> Result<(), String> {
     let [dataset, index, rule, update_mode, noise, output, rest @ ..] = args else {
@@ -19,24 +19,24 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     let index: usize = index
         .parse()
-        .map_err(|_| "Indeks musi być liczbą całkowitą od 0")?;
+        .map_err(|_| "Index must be a nonnegative integer")?;
     let noise: f32 = noise
         .parse()
-        .map_err(|_| "Szum musi być liczbą od 0 do 100")?;
+        .map_err(|_| "Noise must be a number between 0 and 100")?;
     if !(0.0..=100.0).contains(&noise) {
-        return Err("Szum musi być liczbą od 0 do 100".into());
+        return Err("Noise must be a number between 0 and 100".into());
     }
     let mode = match update_mode.as_str() {
         "sync" => Mode::Sync,
         "async" => Mode::Async,
-        _ => return Err("Tryb aktualizacji musi być sync lub async".into()),
+        _ => return Err("Update mode must be sync or async".into()),
     };
     let output = Path::new(output);
     if !output
         .extension()
         .is_some_and(|ext| ext.eq_ignore_ascii_case("html"))
     {
-        return Err("Plik wynikowy musi mieć rozszerzenie .html".into());
+        return Err("Output filename must end in .html".into());
     }
 
     let bitmaps = Bitmaps::load(Path::new(dataset))?;
@@ -47,7 +47,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         .transpose()?;
     let input = if let Some(ref bitmaps) = input_bitmaps {
         if (bitmaps.width, bitmaps.height) != (width, height) {
-            return Err("Wymiary wejścia i zbioru uczącego muszą być identyczne".into());
+            return Err("Input and training images must have the same dimensions".into());
         }
         &bitmaps.patterns
     } else {
@@ -55,26 +55,26 @@ pub fn run(args: &[String]) -> Result<(), String> {
     };
     let pattern = input
         .get(index)
-        .ok_or_else(|| format!("Dostępne indeksy 0–{}", input.len() - 1))?;
+        .ok_or_else(|| format!("Available indices: 0–{}", input.len() - 1))?;
 
     let (oja, label) = match rule.as_str() {
         "hebb" => (false, "Hebb"),
         "oja" => (true, "Oja"),
-        _ => return Err("Reguła uczenia musi być hebb lub oja".into()),
+        _ => return Err("Learning rule must be hebb or oja".into()),
     };
     let mut probe = Utils::add_noise(pattern, noise / 100.0, &mut StdRng::seed_from_u64(SEED));
     let (history, end) = train_bitmap(&bitmaps.patterns, oja).run(&mut probe, mode);
     let end = match end {
-        TestEnd::Stable => "Stan stabilny",
-        TestEnd::Cycle => "Cykl dwustanowy",
+        TestEnd::Stable => "Stable state",
+        TestEnd::Cycle => "Two-state cycle",
     };
 
     let mut html = format!(
         r#"<!doctype html>
-<html lang="pl">
+<html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Symulacja sieci Hopfielda</title>
+<title>Hopfield network simulation</title>
 <style>
   :root {{ color-scheme: light; font: 16px system-ui, sans-serif; color: #e5edf2; background: #10212b }}
   body {{ margin: 0 auto; max-width: 46rem; padding: 2rem 1rem }}
@@ -88,14 +88,14 @@ pub fn run(args: &[String]) -> Result<(), String> {
   input {{ width: 100%; margin: .4rem 0 0; accent-color: #afe6d5 }}
 </style>
 <main>
-  <h1>Symulacja sieci Hopfielda</h1>
-  <p>{width} × {height} neuronów · {label} · tryb {update_mode} · szum {noise}%</p>
-  <figure><canvas id="bitmap" width="{width}" height="{height}" aria-label="Bitmapa stanu sieci"></canvas></figure>
-  <label for="frame">Krok symulacji</label>
+  <h1>Hopfield network simulation</h1>
+  <p>{width} × {height} neurons · {label} · {update_mode} mode · {noise}% noise</p>
+  <figure><canvas id="bitmap" width="{width}" height="{height}" aria-label="Bitmap of the network state"></canvas></figure>
+  <label for="frame">Simulation step</label>
   <input id="frame" type="range" min="0" value="0">
   <output id="status" for="frame" aria-live="polite"></output>
   <div class="controls">
-    <button id="back">Wstecz</button><button id="next">Dalej</button><button id="play">Odtwórz</button>
+    <button id="back">Back</button><button id="next">Next</button><button id="play">Play</button>
   </div>
 </main>
 <script>
@@ -117,7 +117,7 @@ const states = [
     fs::write(output, html).map_err(|e| format!("{}: {e}", output.display()))?;
 
     println!(
-        "{end} · liczba kroków: {} · {}",
+        "{end} · steps: {} · {}",
         history.len() - 1,
         output.display()
     );

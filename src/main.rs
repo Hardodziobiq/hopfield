@@ -30,7 +30,7 @@ fn main() -> Result<(), String> {
         .map(|arg| match arg.parse() {
             Ok(number @ 1..=7) => Ok(number),
             _ => Err(format!(
-                "Nieznany eksperyment {arg}. Użyj numeru 1–7 albo --help."
+                "Unknown experiment {arg}. Use a number from 1 to 7 or --help."
             )),
         })
         .collect::<Result<_, _>>()?;

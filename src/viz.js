@@ -30,7 +30,7 @@ function show(index) {
 function stop() {
   clearInterval(timer);
   timer = null;
-  play.textContent = 'Odtwórz';
+  play.textContent = 'Play';
 }
 
 function seek(index) {
@@ -47,7 +47,7 @@ play.addEventListener('click', () => {
     return;
   }
   if (frame === last) show(0);
-  play.textContent = 'Pauza';
+  play.textContent = 'Pause';
   timer = setInterval(() => {
     show(frame + 1);
     if (frame === last) stop();

@@ -1,6 +1,6 @@
-# Uruchamianie projektu Hopfielda
+# Running the Hopfield project
 
-Polecenia uruchamiaj z głównego katalogu repozytorium.
+Run these commands from the repository root.
 
 ```sh
 cargo run --release
@@ -9,16 +9,18 @@ cargo run --release -- 7
 cargo run --release -- 1 2 3 4 5 6 7
 ```
 
-Bez argumentów program uruchamia dotychczasowe eksperymenty 1–6. Polecenie z numerem 7 bada trzy bitmapy 200×300 obiema regułami w obu trybach. Możesz łączyć numery w jednym wywołaniu. [Raport](../RAPORT.md) opisuje doświadczenia, a [zapis pomiarów](wyniki.txt) zawiera ich pełne wyniki.
+With no arguments, the program runs experiments 1–6. Experiment 7 evaluates three 200×300 bitmaps using both learning rules and both update modes. You can pass several experiment numbers in one command. [Report in Polish](../RAPORT.md) · [Full results](wyniki.txt)
 
-## Wizualizacja
+## Visualization
 
 ```sh
-cargo run --release -- viz src/data/large-25x25.csv 0 oja sync 25 target/pamiec.html
-cargo run --release -- viz src/own/oscillation-train-5x5.csv 0 hebb sync 0 target/cykl.html src/own/oscillation-input-5x5.csv
-cargo run --release -- viz src/large 0 hebb async 30 target/duza.html
+cargo run --release -- viz src/data/large-25x25.csv 0 oja sync 25 target/recall.html
+cargo run --release -- viz src/own/oscillation-train-5x5.csv 0 hebb sync 0 target/cycle.html src/own/oscillation-input-5x5.csv
+cargo run --release -- viz src/large 0 hebb async 30 target/large.html
 ```
 
-Wygenerowany plik HTML otwórz w przeglądarce. Suwak i przyciski pokazują stan początkowy, kolejne kroki i wynik. Krok w trybie `async` to jedno przejście przez wszystkie piksele z natychmiastowym zastosowaniem każdej zmiany.
+Open the generated HTML file in a browser. Use the slider and buttons to view the initial state, each simulation step, and the final result. In `async` mode, one step visits every pixel once and applies each change immediately.
 
-Argumenty polecenia to `viz ZBIÓR INDEKS hebb|oja sync|async SZUM_PROCENT WYNIK.html [WEJŚCIE]`. Indeks zaczyna się od zera i wybiera wzorzec z pliku wejściowego lub ze zbioru uczącego, jeśli dodatkowego pliku brak. Podane wymiary określają liczbę neuronów. CSV przechowuje po jednym wzorcu w wierszu, w notacji +1 dla czerni i −1 dla bieli. Jego nazwa zawiera wymiary, jak w `wzorce-10x15.csv`. Można też wskazać tekstowy obraz PBM P1 albo katalog takich obrazów o zgodnych wymiarach. Program czyta pliki katalogu w kolejności alfabetycznej.
+The command takes `viz DATASET INDEX hebb|oja sync|async NOISE_PERCENT OUTPUT.html [INPUT]`. The zero-based index selects a pattern from the optional input or, if omitted, from the training dataset. The image dimensions determine the number of neurons.
+
+A CSV file stores one pattern per row, with +1 for black and −1 for white. Include the dimensions in the filename, for example `patterns-10x15.csv`. You can also pass a plain PBM (P1) image or a directory of such images with matching dimensions. The program reads PBM files in alphabetical order.

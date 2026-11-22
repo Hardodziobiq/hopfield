@@ -11,11 +11,11 @@ pub fn run() -> Result<(), String> {
     let patterns = &data.patterns;
 
     Utils::print_header(
-        "TEST 7. Duże bitmapy",
-        "Trzy zdjęcia po binaryzacji. Odzysk dokładny oraz zgodność pikseli.",
+        "TEST 7. Large bitmaps",
+        "Three binarized photographs. Exact recovery and pixel agreement.",
     );
     println!(
-        "{}×{}, {} neuronów, {} wzorce, średni |overlap| {:.3}",
+        "{}×{}, {} neurons, {} patterns, mean |overlap| {:.3}",
         data.width,
         data.height,
         data.width * data.height,
@@ -31,7 +31,7 @@ pub fn run() -> Result<(), String> {
                 net.run(&mut probe, Mode::Sync).0.len() == 1
             })
             .count();
-        println!("{name}: stabilne {stable}/{}", patterns.len());
+        println!("{name}: stable {stable}/{}", patterns.len());
         for (label, mode) in [("sync", Mode::Sync), ("async", Mode::Async)] {
             let mut rng = StdRng::seed_from_u64(SEED);
             let (exact, pixels): (Vec<_>, Vec<_>) = NOISE_LEVELS
@@ -39,8 +39,8 @@ pub fn run() -> Result<(), String> {
                 .map(|&noise| measure(net.as_ref(), patterns, mode, noise, &mut rng))
                 .unzip();
             Utils::print_levels_header();
-            Utils::print_rate_row(&format!("{label} dokładne"), &exact);
-            Utils::print_rate_row(&format!("{label} piksele"), &pixels);
+            Utils::print_rate_row(&format!("{label} exact"), &exact);
+            Utils::print_rate_row(&format!("{label} pixels"), &pixels);
         }
     }
     Ok(())
