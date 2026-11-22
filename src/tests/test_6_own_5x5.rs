@@ -20,18 +20,34 @@ impl Own5x5Test {
              oscylacją między dwoma stanami.",
         );
         Self::stable_set();
+        Self::balanced_set();
         Self::oscillation();
+    }
+
+    /// The first 22 bits contain 11 ones; the final 3 bits are all equal.
+    /// Symmetry gives two Hebbian margins for the entire family.
+    fn balanced_set() {
+        const BALANCED: u32 = 22;
+        const HALF: u32 = BALANCED / 2;
+        let count = (0..(1_u32 << BALANCED))
+            .filter(|mask| mask.count_ones() == HALF)
+            .count()
+            * 2;
+        let first_margin = count as f64 / (f64::from(BALANCED - 1) * 25.0);
+        let last_margin = 2.0 * count as f64 / 25.0;
+        println!("-- 6a. Konstrukcja z 22 zrównoważonymi pikselami i trzema równymi --");
+        println!("Hebb: {count} różnych, ściśle stabilnych wzorców.");
+        println!(
+            "Margines pierwszych 22 pikseli: {first_margin:.3}, ostatnich trzech: {last_margin:.3}.\n"
+        );
     }
 
     /// 6a. zbiór 19 prawie ortogonalnych wektorów
     fn stable_set() {
         println!("-- 6a. Stabilny zbiór 5x5 --");
         println!(
-            "Budowa: 24 parami ortogonalne wiersze macierzy Hadamarda rzędu 24\n\
-             (konstrukcja Paleya) z dopisanym 25. pikselem = +1, więc każda para ma\n\
-             iloczyn skalarny 1. Teoria: margines = 26 - 2N > 0 dla N <= 12.\n\
-             Losowe przeszukiwanie podzbiorów i znaków wierszy dało większy zbiór.\n\
-             (dla porównania: losowe wektory dokładane zachłannie dały 13 wzorców)\n"
+            "Wzorce wybrano z wierszy macierzy Hadamarda rzędu 24 z dodatkowym pikselem.\n\
+             Poniżej najmniejszy margines x_i (Wx)_i dla całego zbioru.\n"
         );
         let (patterns, width, height) = Utils::load_patterns(Self::STABLE_SET);
         let k: usize = patterns.len();
@@ -45,7 +61,7 @@ impl Own5x5Test {
         );
         println!(
             "min. margines Hebba = {} (> 0 = wszystkie stabilne), max podobieństwo par = {:.3}",
-            Self::hebb_min_margin(&patterns),
+            Self::hebb_min_margin(&patterns) / n as f32,
             Utils::most_similar_pair(&patterns).2
         );
         println!(
@@ -83,7 +99,7 @@ impl Own5x5Test {
         let mut probe: Vec<f32> = input.clone();
         let history: Vec<Vec<f32>> = net.asynchronized_test(&mut probe);
         println!(
-            "tryb asynchroniczny dla tego samego wejścia: {} kroki, stan końcowy: {}",
+            "tryb asynchroniczny dla tego samego wejścia: liczba kroków {}, stan końcowy: {}",
             history.len() - 1,
             Self::describe_state(&probe, &training)
         );
@@ -133,7 +149,10 @@ impl Own5x5Test {
         for chunk in patterns.chunks(per_row) {
             for y in 0..height {
                 print!("  ");
-                for pattern in chunk {
+                for (index, pattern) in chunk.iter().enumerate() {
+                    if index > 0 {
+                        print!("   ");
+                    }
                     for x in 0..width {
                         print!(
                             "{}",
@@ -144,7 +163,6 @@ impl Own5x5Test {
                             }
                         );
                     }
-                    print!("   ");
                 }
                 println!();
             }

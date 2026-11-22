@@ -20,7 +20,7 @@ pub struct Utils;
 
 /// UTILS MAIN FUNCTIONS
 impl Utils {
-    pub fn pattern_validate(patterns: &Vec<Vec<f32>>) -> usize {
+    pub fn pattern_validate(patterns: &[Vec<f32>]) -> usize {
         if patterns.is_empty() {
             panic!("Empty patterns!");
         }
@@ -32,6 +32,10 @@ impl Utils {
             if pattern.len() != pattern_len {
                 panic!("Different patterns length!");
             }
+            assert!(
+                pattern.iter().all(|&x| x == -1.0 || x == 1.0),
+                "Patterns must be bipolar"
+            );
         }
         pattern_len
     }
@@ -47,43 +51,57 @@ impl Utils {
 
     /// PARSING FILE (PATTERN, WIDTH, HEIGHT)
     pub fn load_patterns(path: &str) -> (Vec<Vec<f32>>, usize, usize) {
-        let (width, height) = Self::parse_size(path);
-        let content: String = fs::read_to_string(path).expect("Cannot read file!");
-        let mut patterns: Vec<Vec<f32>> = Vec::new();
-        for line in content.lines() {
+        Self::read_csv(Path::new(path)).unwrap_or_else(|error| panic!("{error}"))
+    }
+
+    pub fn read_csv(path: &Path) -> Result<(Vec<Vec<f32>>, usize, usize), String> {
+        let (width, height) = Self::parse_size(path)
+            .ok_or_else(|| format!("Expected WIDTHxHEIGHT in {}", path.display()))?;
+        let area = width
+            .checked_mul(height)
+            .filter(|&n| n > 0)
+            .ok_or_else(|| format!("Invalid dimensions in {}", path.display()))?;
+        let content = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let mut patterns = Vec::new();
+        for (row, line) in content.lines().enumerate() {
             let line: &str = line.trim();
             if line.is_empty() {
                 continue;
             }
-            let mut pattern: Vec<f32> = Vec::new();
-            for value in line.split(',') {
-                pattern.push(value.trim().parse::<f32>().expect("Not a number!"));
-            }
-            if pattern.len() != width * height {
-                panic!(
-                    "Pattern length {} doesn't match {}x{}!",
-                    pattern.len(),
-                    width,
-                    height
-                );
+            let pattern: Vec<f32> = line
+                .split(',')
+                .map(|value| {
+                    value
+                        .trim()
+                        .parse::<f32>()
+                        .ok()
+                        .filter(|&x| x == -1.0 || x == 1.0)
+                        .ok_or_else(|| format!("{}:{}: expected -1 or 1", path.display(), row + 1))
+                })
+                .collect::<Result<_, _>>()?;
+            if pattern.len() != area {
+                return Err(format!(
+                    "{}:{}: expected {area} pixels, got {}",
+                    path.display(),
+                    row + 1,
+                    pattern.len()
+                ));
             }
             patterns.push(pattern);
         }
-        (patterns, width, height)
-    }
-    fn parse_size(path: &str) -> (usize, usize) {
-        let stem: &str = Path::new(path)
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .expect("Bad file name!");
-        for part in stem.split(|c: char| c == '-' || c == '_' || c == '.') {
-            if let Some((w, h)) = part.split_once('x') {
-                if let (Ok(width), Ok(height)) = (w.parse::<usize>(), h.parse::<usize>()) {
-                    return (width, height);
-                }
-            }
+        if patterns.is_empty() {
+            return Err(format!("{}: empty training set", path.display()));
         }
-        panic!("Cannot find WIDTHxHEIGHT in file name: {}", path);
+        Ok((patterns, width, height))
+    }
+    fn parse_size(path: &Path) -> Option<(usize, usize)> {
+        path.file_stem()?
+            .to_str()?
+            .split(['-', '_', '.'])
+            .find_map(|part| {
+                let (w, h) = part.split_once('x')?;
+                Some((w.parse().ok()?, h.parse().ok()?))
+            })
     }
 
     /// NOISE PATTERNS
@@ -113,6 +131,10 @@ impl Utils {
     /// Creates rectangle on pattern with given value
     /// (x0, y0) left upper corner
     /// w - width, h - height
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Preserve the public rectangle API"
+    )]
     pub fn occlude(
         pattern: &[f32],
         width: usize,
@@ -124,8 +146,8 @@ impl Utils {
         value: f32,
     ) -> Vec<f32> {
         let mut occluded: Vec<f32> = pattern.to_vec();
-        for y in y0..(y0 + h).min(height) {
-            for x in x0..(x0 + w).min(width) {
+        for y in y0..y0.saturating_add(h).min(height) {
+            for x in x0..x0.saturating_add(w).min(width) {
                 occluded[y * width + x] = value;
             }
         }
@@ -245,17 +267,8 @@ impl Utils {
     /// STABILITY (pixels changed in the first sync step, 0 = stable pattern)
     pub fn unstable_pixels(net: &Hopfield, pattern: &[f32]) -> usize {
         let mut probe: Vec<f32> = pattern.to_vec();
-        let (history, _) = net.synchronized_test(&mut probe);
-        if history.len() < 2 {
-            return 0;
-        }
-        let mut flips: usize = 0;
-        for i in 0..history[0].len() {
-            if history[0][i] != history[1][i] {
-                flips += 1;
-            }
-        }
-        flips
+        net.step(&mut probe, Mode::Sync);
+        probe.iter().zip(pattern).filter(|(a, b)| a != b).count()
     }
     pub fn count_stable(net: &Hopfield, patterns: &[Vec<f32>]) -> usize {
         let mut count: usize = 0;
@@ -269,14 +282,8 @@ impl Utils {
 
     /// RECALL (recovery from damaged input)
     /// Async always ends in a stable state.
-    pub fn recall(net: &Hopfield, probe: &mut Vec<f32>, mode: Mode) -> TestEnd {
-        match mode {
-            Mode::Sync => net.synchronized_test(probe).1,
-            Mode::Async => {
-                net.asynchronized_test(probe);
-                TestEnd::Stable
-            }
-        }
+    pub fn recall(net: &Hopfield, probe: &mut [f32], mode: Mode) -> TestEnd {
+        net.run(probe, mode).1
     }
     /// Damages every pattern with `damage` NOISE_REPEATS times and recalls it.
     /// Returns (fraction of exact recoveries, mean fraction of correct pixels).

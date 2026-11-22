@@ -125,8 +125,10 @@ impl CommonBlockTest {
         for ((name, patterns), (hebb, oja)) in variants.iter().zip(nets.iter()) {
             println!("{}:", name);
             Utils::print_levels_header();
+            let baseline: u64 = rng.random();
             for (net_name, net) in [("Hebb", hebb), ("Oja", oja)] {
                 for (mode_name, mode) in [("sync", Mode::Sync), ("async", Mode::Async)] {
+                    let rng = &mut StdRng::seed_from_u64(baseline);
                     let (exact, _) = Utils::noise_test_stats(net, patterns, mode, rng);
                     Utils::print_rate_row(&format!("{} {}", net_name, mode_name), &exact);
                 }

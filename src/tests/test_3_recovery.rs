@@ -40,8 +40,10 @@ impl RecoveryTest {
             );
             let mut exact_rows: Vec<(String, Vec<f32>)> = Vec::new();
             let mut pixel_rows: Vec<(String, Vec<f32>)> = Vec::new();
+            let baseline: u64 = rng.random();
             for (net_name, net) in [("Hebb", &hebb), ("Oja", &oja)] {
                 for (mode_name, mode) in [("sync", Mode::Sync), ("async", Mode::Async)] {
+                    let rng = &mut StdRng::seed_from_u64(baseline);
                     let (exact, pixels) = Utils::noise_test_stats(net, &ds.patterns, mode, rng);
                     let label: String = format!("{} {}", net_name, mode_name);
                     exact_rows.push((label.clone(), exact));
@@ -80,8 +82,11 @@ impl RecoveryTest {
                 let subset: Vec<Vec<f32>> = ds.patterns[..k].to_vec();
                 let hebb: Hopfield = Hopfield::new_hebb(&subset);
                 let oja: Hopfield = Hopfield::new_oja(&subset, OJA_LR, OJA_EPOCHS, OJA_TOL);
+                let baseline: u64 = rng.random();
+                let rng = &mut StdRng::seed_from_u64(baseline);
                 let (hebb_rate, _) =
                     Utils::recovery_rate(&hebb, &subset, Mode::Async, rng, &damage);
+                *rng = StdRng::seed_from_u64(baseline);
                 let (oja_rate, _) = Utils::recovery_rate(&oja, &subset, Mode::Async, rng, &damage);
                 ks.push(k.to_string());
                 hebb_cells.push(format!("{:.2}", hebb_rate));
@@ -118,8 +123,11 @@ impl RecoveryTest {
                 let y0: usize = r.random_range(0..=(ds.height - band_h));
                 Utils::occlude(p, ds.width, ds.height, 0, y0, ds.width, band_h, -1.0)
             };
+            let baseline: u64 = rng.random();
+            let rng = &mut StdRng::seed_from_u64(baseline);
             let (hn, _) = Utils::recovery_rate(&hebb, &ds.patterns, Mode::Async, rng, &noise);
             let (ho, _) = Utils::recovery_rate(&hebb, &ds.patterns, Mode::Async, rng, &occlusion);
+            *rng = StdRng::seed_from_u64(baseline);
             let (on, _) = Utils::recovery_rate(&oja, &ds.patterns, Mode::Async, rng, &noise);
             let (oo, _) = Utils::recovery_rate(&oja, &ds.patterns, Mode::Async, rng, &occlusion);
             println!(
