@@ -3,8 +3,8 @@ use std::fs;
 use std::path::Path;
 
 use hopfield::net::bitmap::Bitmaps;
-use hopfield::net::hopfield::Hopfield;
-use hopfield::net::utility::{Mode, OJA_EPOCHS, OJA_LR, OJA_TOL, SEED, TestEnd, Utils};
+use hopfield::net::train_bitmap;
+use hopfield::net::utility::{Mode, SEED, TestEnd, Utils};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
@@ -57,16 +57,13 @@ pub fn run(args: &[String]) -> Result<(), String> {
         .get(index)
         .ok_or_else(|| format!("Dostępne indeksy 0–{}", input.len() - 1))?;
 
-    let (net, label) = match rule.as_str() {
-        "hebb" => (Hopfield::new_hebb(&bitmaps.patterns), "Hebb"),
-        "oja" => (
-            Hopfield::new_oja(&bitmaps.patterns, OJA_LR, OJA_EPOCHS, OJA_TOL),
-            "Oja",
-        ),
+    let (oja, label) = match rule.as_str() {
+        "hebb" => (false, "Hebb"),
+        "oja" => (true, "Oja"),
         _ => return Err("Reguła uczenia musi być hebb lub oja".into()),
     };
     let mut probe = Utils::add_noise(pattern, noise / 100.0, &mut StdRng::seed_from_u64(SEED));
-    let (history, end) = net.run(&mut probe, mode);
+    let (history, end) = train_bitmap(&bitmaps.patterns, oja).run(&mut probe, mode);
     let end = match end {
         TestEnd::Stable => "Stan stabilny",
         TestEnd::Cycle => "Cykl dwustanowy",

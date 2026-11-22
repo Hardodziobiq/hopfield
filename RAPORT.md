@@ -2,7 +2,7 @@
 
 ## Model i reguły uczenia
 
-Stan s zawiera n pikseli o wartościach −1 i +1. Wagi W są symetryczne, a wᵢᵢ = 0. Neuron oblicza pole lokalne hᵢ = Σⱼ wᵢⱼsⱼ i przyjmuje jego znak. Gdy pole wynosi zero (w obliczeniach |hᵢ| ≤ 10⁻¹⁰), zachowuje swój stan. Wzorzec x jest punktem stałym, gdy wszystkie marginesy xᵢhᵢ są nieujemne. Ściśle dodatni margines oznacza, że neuron ma dodatnie pole w kierunku swojego obecnego stanu.
+Stan s zawiera n pikseli o wartościach −1 i +1. Wagi W są symetryczne, a wᵢᵢ = 0. Neuron oblicza pole lokalne hᵢ = Σⱼ wᵢⱼsⱼ i przyjmuje jego znak. Gdy pole wynosi zero, zachowuje swój stan. Wariant grupowy Oji traktuje również |hᵢ| ≤ 10⁻¹⁰ jako remis. Wzorzec x jest punktem stałym, gdy w modelu dokładnym wszystkie marginesy xᵢhᵢ są nieujemne. Ściśle dodatni margines oznacza, że neuron ma dodatnie pole w kierunku swojego obecnego stanu.
 
 W trybie asynchronicznym jeden krok obejmuje pełne przejście po neuronach. Po każdej zmianie następny neuron korzysta z aktualnego stanu. Energia E(s) = −½sᵀWs zmienia się przy aktualizacji neuronu i o −(sᵢ′−sᵢ)hᵢ. Każda zmiana znaku obniża energię. Ponieważ zbiór stanów jest skończony, sieć dochodzi do punktu stałego. Gdy wszystkie aktualizacje korzystają z poprzedniego stanu (tryb synchroniczny), ten argument o energii nie ma zastosowania. Symetryczna dynamika progowa może osiągnąć punkt stały lub cykl dwustanowy [1, 5].
 
@@ -18,7 +18,7 @@ pokazuje, dlaczego w pobliżu zapamiętanych wzorców mogą powstawać minima. K
 
 W projekcie stosujemy regułę podprzestrzenną dla macierzy W zapisywanej wierszami. Obliczamy y = Wx, v = Wᵀy, a następnie ΔW = ηy(x − v)ᵀ. Punkt wyjścia to wagi Hebba podzielone przez największą sumę modułów w wierszu. Przekątna pozostaje zerowa, a po każdej epoce uśredniamy W i Wᵀ. Użyto η = 0,5/n, do 300 epok i progu maksymalnej aktualizacji 10⁻⁶. Mechanizm korekty widać w postaci średniej aktualizacji przed narzuceniem ograniczeń, ηWC(I − WᵀW). Dla wspólnego kierunku własnego symetrycznych W i C przyrost ma czynnik λw(1 − w²), więc dobrze reprezentowany kierunek przestaje dominować przez sam wzrost swojej wagi. To wyjaśnia, czemu reguła może lepiej zachować mniej dominujące cechy. Po wyzerowaniu przekątnej, symetryzacji i skończonej liczbie epok znaki pól trzeba sprawdzić na każdym wzorcu.
 
-**Duże obrazy.** Wagi pomiędzy neuronami o identycznych sygnaturach uczących są identyczne. Odwrócone sygnatury dają ten sam układ po zmianie znaku. Ponieważ obie reguły zachowują tę własność, zapisujemy indeks grupy i znak każdego neuronu oraz macierz g×g dla g grup. W działaniu odejmujemy własny wkład neuronu. Dla trzech wzorców możliwe są maksymalnie cztery grupy. Przy n = 60 000 pełna macierz `f64` zajęłaby 28,8 GB. Gdy wszystkie sygnatury są różne, macierz grup nadal może mieć rozmiar n×n. Zgrupowane uczenie i pojedyncze kroki porównano z pełną macierzą w teście jednostkowym.
+**Duże obrazy.** Wizualizacja i eksperyment bitmap używają dotychczasowej macierzy sieci dla obrazów do 2048 pikseli. Powyżej tej granicy Hebb korzysta z istniejącego `LargeHopfield`, który wylicza pola z iloczynów skalarnych wzorców z bieżącym stanem. Wspólny dodatni czynnik 1/n można pominąć, bo decyzja zależy od znaku pola. Oja korzysta z macierzy g×g dla g grup neuronów. Neurony o identycznych sygnaturach uczących mają te same wagi, a sygnatury przeciwne łączymy po zmianie znaku. Nadal odejmujemy wkład neuronu do samego siebie. Przy trzech wzorcach powstają najwyżej cztery grupy, podczas gdy pełna macierz `f64` dla 60 000 neuronów zajęłaby 28,8 GB. Przy wielu różnych sygnaturach macierz grup może nadal mieć rozmiar n×n. Zgrupowane uczenie i pojedyncze kroki porównano z pełną macierzą w teście jednostkowym.
 
 ## Metodyka
 
@@ -59,7 +59,7 @@ W `large-25x25.plus`, przy 20% szumu i aktualizacji asynchronicznej, Hebb odzysk
 
 Dla pełnego zbioru `small-7x7` i Oji w trybie synchronicznym odzysk wyniósł 100% przy 20% szumu, 78% przy 30% i 24% przy 40%. Dla `large-25x25.plus` te trzy wyniki wyniosły po 100%. Na literach 14×20 dokładny odzysk wynosił 0% w obu regułach na wszystkich poziomach szumu, mimo około 90% zgodności pikseli przy szumie 20%.
 
-Losowe odwrócenie 20% pikseli porównano z zakryciem białym pasem 20% powierzchni (wysokość zaokrąglona do pełnych wierszy). Dla Hebba w trybie asynchronicznym pas obniżył odzysk na 25×25 z 45% do 33%, a w zbiorze zwierząt podniósł go z 5% do 15%. Biały pas zachowuje istniejące białe piksele, ale usuwa skorelowane przestrzennie fragmenty figury. Te protokoły badają dwa różne uszkodzenia.
+Losowe odwrócenie 20% pikseli porównano z zakryciem białym pasem 20% powierzchni (wysokość zaokrąglona do pełnych wierszy). Dla Hebba w trybie asynchronicznym pas obniżył odzysk na 25×25 z 45% do 33%, a w zbiorze zwierząt podniósł go z 5% do 8%. Biały pas zachowuje istniejące białe piksele, ale usuwa skorelowane przestrzennie fragmenty figury. Te protokoły badają dwa różne uszkodzenia.
 
 ## 4. Grupy wzorców podobnych
 

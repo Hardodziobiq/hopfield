@@ -1,5 +1,5 @@
 #![allow(clippy::needless_range_loop)]
-use crate::net::hopfield::Hopfield;
+use crate::net::Recall;
 use rand::Rng;
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
@@ -20,7 +20,7 @@ pub struct Utils;
 
 /// UTILS MAIN FUNCTIONS
 impl Utils {
-    pub fn pattern_validate(patterns: &[Vec<f32>]) -> usize {
+    pub fn pattern_validate(patterns: &Vec<Vec<f32>>) -> usize {
         if patterns.is_empty() {
             panic!("Empty patterns!");
         }
@@ -32,10 +32,6 @@ impl Utils {
             if pattern.len() != pattern_len {
                 panic!("Different patterns length!");
             }
-            assert!(
-                pattern.iter().all(|&x| x == -1.0 || x == 1.0),
-                "Patterns must be bipolar"
-            );
         }
         pattern_len
     }
@@ -146,8 +142,8 @@ impl Utils {
         value: f32,
     ) -> Vec<f32> {
         let mut occluded: Vec<f32> = pattern.to_vec();
-        for y in y0..y0.saturating_add(h).min(height) {
-            for x in x0..x0.saturating_add(w).min(width) {
+        for y in y0..(y0 + h).min(height) {
+            for x in x0..(x0 + w).min(width) {
                 occluded[y * width + x] = value;
             }
         }
@@ -265,12 +261,13 @@ impl Utils {
     }
 
     /// STABILITY (pixels changed in the first sync step, 0 = stable pattern)
-    pub fn unstable_pixels(net: &Hopfield, pattern: &[f32]) -> usize {
+    pub fn unstable_pixels(net: &dyn Recall, pattern: &[f32]) -> usize {
         let mut probe: Vec<f32> = pattern.to_vec();
-        net.step(&mut probe, Mode::Sync);
+        let (history, _) = net.run(&mut probe, Mode::Sync);
+        let probe = history.get(1).unwrap_or(&history[0]);
         probe.iter().zip(pattern).filter(|(a, b)| a != b).count()
     }
-    pub fn count_stable(net: &Hopfield, patterns: &[Vec<f32>]) -> usize {
+    pub fn count_stable(net: &dyn Recall, patterns: &[Vec<f32>]) -> usize {
         let mut count: usize = 0;
         for pattern in patterns {
             if Self::unstable_pixels(net, pattern) == 0 {
@@ -282,13 +279,13 @@ impl Utils {
 
     /// RECALL (recovery from damaged input)
     /// Async always ends in a stable state.
-    pub fn recall(net: &Hopfield, probe: &mut [f32], mode: Mode) -> TestEnd {
+    pub fn recall(net: &dyn Recall, probe: &mut Vec<f32>, mode: Mode) -> TestEnd {
         net.run(probe, mode).1
     }
     /// Damages every pattern with `damage` NOISE_REPEATS times and recalls it.
     /// Returns (fraction of exact recoveries, mean fraction of correct pixels).
     pub fn recovery_rate(
-        net: &Hopfield,
+        net: &dyn Recall,
         patterns: &[Vec<f32>],
         mode: Mode,
         rng: &mut StdRng,
@@ -318,7 +315,7 @@ impl Utils {
     }
     /// recovery_rate for every level in NOISE_LEVELS: (exact, pixels)
     pub fn noise_test_stats(
-        net: &Hopfield,
+        net: &dyn Recall,
         patterns: &[Vec<f32>],
         mode: Mode,
         rng: &mut StdRng,

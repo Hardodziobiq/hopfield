@@ -24,16 +24,12 @@ impl Own5x5Test {
         Self::oscillation();
     }
 
-    /// The first 22 bits contain 11 ones; the final 3 bits are all equal.
-    /// Symmetry gives two Hebbian margins for the entire family.
     fn balanced_set() {
-        const BALANCED: u32 = 22;
-        const HALF: u32 = BALANCED / 2;
-        let count = (0..(1_u32 << BALANCED))
-            .filter(|mask| mask.count_ones() == HALF)
+        let count = (0..(1_u32 << 22))
+            .filter(|mask| mask.count_ones() == 11)
             .count()
             * 2;
-        let first_margin = count as f64 / (f64::from(BALANCED - 1) * 25.0);
+        let first_margin = count as f64 / (21.0 * 25.0);
         let last_margin = 2.0 * count as f64 / 25.0;
         println!("-- 6a. Konstrukcja z 22 zrównoważonymi pikselami i trzema równymi --");
         println!("Hebb: {count} różnych, ściśle stabilnych wzorców.");

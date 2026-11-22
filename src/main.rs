@@ -12,36 +12,22 @@ mod viz;
 const DATA_DIR: &str = "src/data";
 
 /// cargo run --release -- test_number_1 test_number_2 etc.
-fn main() -> std::process::ExitCode {
-    let args: Vec<String> = std::env::args().skip(1).collect();
-    let result = match args.first().map(String::as_str) {
-        Some("viz") => viz::run(&args[1..]),
+fn main() -> Result<(), String> {
+    let mut args = std::env::args().skip(1).peekable();
+    match args.peek().map(String::as_str) {
+        Some("viz") => return viz::run(&args.skip(1).collect::<Vec<_>>()),
         Some("-h" | "--help") => {
-            println!(
-                "cargo run --release -- [1 2 3 4 5 6 7]\ncargo run --release -- {}",
-                viz::USAGE
-            );
-            Ok(())
+            println!("cargo run --release -- [1 2 3 4 5 6 7]\n{}", viz::USAGE);
+            return Ok(());
         }
-        _ => experiments(&args),
-    };
-    match result {
-        Ok(()) => std::process::ExitCode::SUCCESS,
-        Err(message) => {
-            eprintln!("{message}");
-            std::process::ExitCode::FAILURE
-        }
+        _ => {}
     }
-}
-
-fn experiments(args: &[String]) -> Result<(), String> {
     let args: Vec<usize> = args
-        .iter()
-        .map(|arg| {
-            arg.parse::<usize>()
-                .ok()
-                .filter(|n| (1..=7).contains(n))
-                .ok_or_else(|| format!("Nieznany eksperyment {arg}. Użyj numeru 1–7 albo --help."))
+        .map(|arg| match arg.parse() {
+            Ok(n @ 1..=7) => Ok(n),
+            _ => Err(format!(
+                "Nieznany eksperyment {arg}. Użyj numeru 1–7 albo --help."
+            )),
         })
         .collect::<Result<_, _>>()?;
     let selected = |nr: usize| args.is_empty() || args.contains(&nr);

@@ -101,8 +101,17 @@ impl RandomInputTest {
             for _ in 0..n {
                 probe.push(if rng.random_bool(0.5) { 1.0 } else { -1.0 });
             }
-            let (history, end) = net.run(&mut probe, mode);
-            steps_sum += history.len() - 1;
+            let (steps, end) = match mode {
+                Mode::Sync => {
+                    let (history, end) = net.synchronized_test(&mut probe);
+                    (history.len() - 1, end)
+                }
+                Mode::Async => {
+                    let history: Vec<Vec<f32>> = net.asynchronized_test(&mut probe);
+                    (history.len() - 1, TestEnd::Stable)
+                }
+            };
+            steps_sum += steps;
             if !finals.contains(&probe) {
                 finals.push(probe.clone());
             }
@@ -110,16 +119,22 @@ impl RandomInputTest {
                 counts[3] += 1;
                 continue;
             }
-            if let Some(idx) = patterns.iter().position(|p| *p == probe) {
-                counts[0] += 1;
-                hits[idx] += 1;
-            } else if let Some(idx) = patterns
-                .iter()
-                .position(|p| p.iter().zip(&probe).all(|(a, b)| *a == -*b))
-            {
-                counts[1] += 1;
-                hits[idx] += 1;
-            } else {
+            let mut matched: bool = false;
+            for (idx, pattern) in patterns.iter().enumerate() {
+                if *pattern == probe {
+                    counts[0] += 1;
+                    hits[idx] += 1;
+                    matched = true;
+                    break;
+                }
+                if pattern.iter().zip(probe.iter()).all(|(a, b)| *a == -*b) {
+                    counts[1] += 1;
+                    hits[idx] += 1;
+                    matched = true;
+                    break;
+                }
+            }
+            if !matched {
                 counts[2] += 1;
                 let mut best: f32 = 0.0;
                 for pattern in patterns {
