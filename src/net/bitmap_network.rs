@@ -1,6 +1,7 @@
 use super::grouped_hopfield;
-use hopfield::net::utility::{Mode, OJA_EPOCHS, OJA_LR, OJA_TOL, TestEnd};
-use hopfield::net::{hopfield::Hopfield, large_hopfield::LargeHopfield};
+use super::hopfield::Hopfield;
+use super::large_hopfield::LargeHopfield;
+use super::utility::{Mode, OJA_EPOCHS, OJA_LR, OJA_TOL, TestEnd};
 
 pub trait Recall {
     fn run(&self, probe: &mut Vec<f32>, mode: Mode) -> (Vec<Vec<f32>>, TestEnd);

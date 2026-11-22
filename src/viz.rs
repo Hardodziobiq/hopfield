@@ -2,8 +2,8 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
-use super::bitmap::Bitmaps;
-use super::network::train_bitmap;
+use hopfield::net::bitmap::Bitmaps;
+use hopfield::net::bitmap_network::train_bitmap;
 use hopfield::net::utility::{Mode, SEED, TestEnd, Utils};
 use rand::SeedableRng;
 use rand::rngs::StdRng;

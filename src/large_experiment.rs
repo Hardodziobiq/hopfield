@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use super::bitmap::Bitmaps;
-use super::network::{Recall, train_bitmap};
+use hopfield::net::bitmap::Bitmaps;
+use hopfield::net::bitmap_network::{Recall, train_bitmap};
 use hopfield::net::utility::{Mode, NOISE_LEVELS, NOISE_REPEATS, SEED, TestEnd, Utils};
 use rand::SeedableRng;
 use rand::rngs::StdRng;

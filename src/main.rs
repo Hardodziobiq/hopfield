@@ -6,7 +6,8 @@ use hopfield::tests::test_4_groups::GroupsTest;
 use hopfield::tests::test_5_random_input::RandomInputTest;
 use hopfield::tests::test_6_own_5x5::Own5x5Test;
 
-mod extension;
+mod large_experiment;
+mod viz;
 
 const DATA_DIR: &str = "src/data";
 
@@ -14,11 +15,11 @@ const DATA_DIR: &str = "src/data";
 fn main() -> Result<(), String> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
-        Some("viz") => return extension::viz::run(&args[1..]),
+        Some("viz") => return viz::run(&args[1..]),
         Some("-h" | "--help") => {
             println!(
                 "cargo run --release -- [1 2 3 4 5 6 7]\ncargo run --release -- {}",
-                extension::viz::USAGE
+                viz::USAGE
             );
             return Ok(());
         }
@@ -59,7 +60,7 @@ fn main() -> Result<(), String> {
         Own5x5Test::run();
     }
     if args.contains(&7) {
-        extension::test_7_large::run()?;
+        large_experiment::run()?;
     }
     Ok(())
 }

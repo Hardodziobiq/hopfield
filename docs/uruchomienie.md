@@ -1,4 +1,4 @@
-# Rozszerzenie projektu Hopfielda
+# Uruchamianie projektu Hopfielda
 
 Polecenia uruchamiaj z głównego katalogu repozytorium.
 
