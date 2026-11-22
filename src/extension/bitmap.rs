@@ -1,8 +1,6 @@
 use std::fs;
 use std::path::Path;
 
-use crate::net::utility::Utils;
-
 pub struct Bitmaps {
     pub width: usize,
     pub height: usize,
@@ -49,7 +47,7 @@ impl Bitmaps {
         {
             Self::read_pbm(path)
         } else {
-            let (patterns, width, height) = Utils::read_csv(path)?;
+            let (patterns, width, height) = Self::read_csv(path)?;
             Ok(Self {
                 width,
                 height,
@@ -98,5 +96,54 @@ impl Bitmaps {
             height,
             patterns: vec![pattern],
         })
+    }
+    fn read_csv(path: &Path) -> Result<(Vec<Vec<f32>>, usize, usize), String> {
+        let (width, height) = Self::parse_size(path)
+            .ok_or_else(|| format!("Expected WIDTHxHEIGHT in {}", path.display()))?;
+        let area = width
+            .checked_mul(height)
+            .filter(|&n| n > 0)
+            .ok_or_else(|| format!("Invalid dimensions in {}", path.display()))?;
+        let content = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let mut patterns = Vec::new();
+        for (row, line) in content.lines().enumerate() {
+            let line: &str = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+            let pattern: Vec<f32> = line
+                .split(',')
+                .map(|value| {
+                    value
+                        .trim()
+                        .parse::<f32>()
+                        .ok()
+                        .filter(|&x| x == -1.0 || x == 1.0)
+                        .ok_or_else(|| format!("{}:{}: expected -1 or 1", path.display(), row + 1))
+                })
+                .collect::<Result<_, _>>()?;
+            if pattern.len() != area {
+                return Err(format!(
+                    "{}:{}: expected {area} pixels, got {}",
+                    path.display(),
+                    row + 1,
+                    pattern.len()
+                ));
+            }
+            patterns.push(pattern);
+        }
+        if patterns.is_empty() {
+            return Err(format!("{}: empty training set", path.display()));
+        }
+        Ok((patterns, width, height))
+    }
+    fn parse_size(path: &Path) -> Option<(usize, usize)> {
+        path.file_stem()?
+            .to_str()?
+            .split(['-', '_', '.'])
+            .find_map(|part| {
+                let (w, h) = part.split_once('x')?;
+                Some((w.parse().ok()?, h.parse().ok()?))
+            })
     }
 }

@@ -1,7 +1,7 @@
 use crate::net::hopfield::Hopfield;
 use crate::net::utility::{Dataset, Mode, NOISE_REPEATS, OJA_EPOCHS, OJA_LR, OJA_TOL, SEED, Utils};
+use rand::SeedableRng;
 use rand::rngs::StdRng;
-use rand::{RngExt, SeedableRng};
 
 /// TEST 4: zbiór z grupami podobnych wzorców vs zbiór zróżnicowany (punkt 5 projektu)
 pub struct GroupsTest;
@@ -76,10 +76,8 @@ impl GroupsTest {
             print!("{:>7}", format!("{:.0}%", level * 100.0));
         }
         println!();
-        let baseline: u64 = rng.random();
         for (name, subset, hebb, oja) in prepared {
             for (net_name, net) in [("Hebb", hebb), ("Oja", oja)] {
-                let rng = &mut StdRng::seed_from_u64(baseline);
                 print!("  {:<20}", format!("{} {}", name, net_name));
                 for level in Self::GROUP_NOISE {
                     let damage = |p: &[f32], r: &mut StdRng| Utils::add_noise(p, level, r);
@@ -102,10 +100,8 @@ impl GroupsTest {
             "  {:<20}{:>10}{:>10}{:>10}{:>11}",
             "", "oryginał", "inny wz.", "negatyw", "inny stan"
         );
-        let baseline: u64 = rng.random();
         for (name, subset, hebb, oja) in prepared {
             for (net_name, net) in [("Hebb", hebb), ("Oja", oja)] {
-                let rng = &mut StdRng::seed_from_u64(baseline);
                 let [orig, other, neg, spurious] = Self::outcome_counts(net, subset, rng);
                 println!(
                     "  {:<20}{:>10}{:>10}{:>10}{:>11}",
@@ -184,7 +180,7 @@ impl GroupsTest {
                 net.asynchronized_test(&mut probe);
                 if probe == *original {
                     counts[0] += 1;
-                } else if patterns.contains(&probe) {
+                } else if patterns.iter().any(|p| *p == probe) {
                     counts[1] += 1;
                 } else if patterns
                     .iter()

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::net::utility::{Mode, TestEnd};
+use hopfield::net::utility::{Mode, TestEnd};
 
 const FIELD_TOLERANCE: f64 = 1e-10;
 
@@ -235,7 +235,7 @@ impl GroupedHopfield {
     }
 }
 
-impl super::Recall for GroupedHopfield {
+impl super::network::Recall for GroupedHopfield {
     fn run(&self, probe: &mut Vec<f32>, mode: Mode) -> (Vec<Vec<f32>>, TestEnd) {
         self.run(probe.as_mut_slice(), mode)
     }

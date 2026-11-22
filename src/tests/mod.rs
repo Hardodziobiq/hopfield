@@ -4,4 +4,3 @@ pub mod test_3_recovery;
 pub mod test_4_groups;
 pub mod test_5_random_input;
 pub mod test_6_own_5x5;
-pub mod test_7_large;

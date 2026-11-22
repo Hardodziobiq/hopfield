@@ -5,26 +5,29 @@ use hopfield::tests::test_3_recovery::RecoveryTest;
 use hopfield::tests::test_4_groups::GroupsTest;
 use hopfield::tests::test_5_random_input::RandomInputTest;
 use hopfield::tests::test_6_own_5x5::Own5x5Test;
-use hopfield::tests::test_7_large;
 
-mod viz;
+mod extension;
 
 const DATA_DIR: &str = "src/data";
 
 /// cargo run --release -- test_number_1 test_number_2 etc.
 fn main() -> Result<(), String> {
-    let mut args = std::env::args().skip(1).peekable();
-    match args.peek().map(String::as_str) {
-        Some("viz") => return viz::run(&args.skip(1).collect::<Vec<_>>()),
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    match args.first().map(String::as_str) {
+        Some("viz") => return extension::viz::run(&args[1..]),
         Some("-h" | "--help") => {
-            println!("cargo run --release -- [1 2 3 4 5 6 7]\n{}", viz::USAGE);
+            println!(
+                "cargo run --release -- [1 2 3 4 5 6 7]\ncargo run --release -- {}",
+                extension::viz::USAGE
+            );
             return Ok(());
         }
         _ => {}
     }
     let args: Vec<usize> = args
+        .iter()
         .map(|arg| match arg.parse() {
-            Ok(n @ 1..=7) => Ok(n),
+            Ok(number @ 1..=7) => Ok(number),
             _ => Err(format!(
                 "Nieznany eksperyment {arg}. Użyj numeru 1–7 albo --help."
             )),
@@ -55,8 +58,8 @@ fn main() -> Result<(), String> {
     if selected(6) {
         Own5x5Test::run();
     }
-    if selected(7) {
-        test_7_large::run()?;
+    if args.contains(&7) {
+        extension::test_7_large::run()?;
     }
     Ok(())
 }

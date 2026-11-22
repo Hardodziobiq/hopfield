@@ -22,7 +22,7 @@ W projekcie stosujemy regułę podprzestrzenną dla macierzy W zapisywanej wiers
 
 ## Metodyka
 
-Odwracaliśmy losowo ustaloną liczbę różnych pikseli (0, 10, 20, 30, 40, 50%), po 10 prób na wzorzec i poziom. Porównywane reguły i tryby otrzymywały te same realizacje uszkodzenia w obrębie doświadczenia. Pomiar dokładnego odzyskania wymagał stabilnego wyniku identycznego z oryginałem. Udział zgodnych pikseli liczono również przy nieudanym odzyskaniu i w stanie kończącym ślad cyklu. Liczność badano na kolejnych prefiksach zbioru. Osobny eksperyment obejmował po 100 niezależnych wejść z pikselami losowanymi z jednakowym prawdopodobieństwem. Generator inicjowano ziarnem 42. [Pełne wyniki](docs/wyniki.txt) można odtworzyć poleceniem `cargo run --release -- 1 2 3 4 5 6 7`.
+Odwracaliśmy losowo ustaloną liczbę różnych pikseli (0, 10, 20, 30, 40, 50%), po 10 prób na wzorzec i poziom. W eksperymentach 2–5 program bazowy używa kolejnych realizacji generatora dla każdej konfiguracji. W eksperymencie 7 wszystkie konfiguracje dostają te same realizacje uszkodzenia. Pomiar dokładnego odzyskania wymagał stabilnego wyniku identycznego z oryginałem. Udział zgodnych pikseli liczono również przy nieudanym odzyskaniu i w stanie kończącym ślad cyklu. Liczność badano na kolejnych prefiksach zbioru. Osobny eksperyment obejmował po 100 niezależnych wejść z pikselami losowanymi z jednakowym prawdopodobieństwem. Generator inicjowano ziarnem 42. [Pełne wyniki](docs/wyniki.txt) można odtworzyć poleceniem `cargo run --release -- 1 2 3 4 5 6 7`.
 
 ## 1. Stabilność zbiorów dostarczonych na zajęcia
 
@@ -47,19 +47,19 @@ Wszystkie sześć górnych połówek jest piksel w piksel identycznych z odpowia
 
 | Wariant | Średni overlap | Hebb stabilne | Hebb odzysk sync/async, szum 20% | Oja stabilne | Oja odzysk sync/async, szum 20% |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 25×25 | 0,142 | 5/6 | 63% / 50% | 6/6 | 100% / 100% |
+| 25×25 | 0,142 | 5/6 | 67% / 50% | 6/6 | 100% / 100% |
 | 25×50, wspólny blok | 0,567 | 0/6 | 0% / 0% | 6/6 | 100% / 100% |
 | 25×50, losowy blok | 0,076 | 6/6 | 100% / 100% | 6/6 | 100% / 100% |
 
-Wspólny blok podnosi pola od innych wzorców w górnej części. Gdy te pola głosują przeciw cechom oryginału, rozpoznanie kończy się podobną bitmapą (około 87% zgodnych pikseli w teście 3 przy 20% szumu dla Hebba), ale szczegóły ulegają zmianie. Próba kontrolna pokazuje, że przy tym samym rozmiarze i liczności wyniki wracają po rozproszeniu korelacji. Dla Oji wpływ jest niewielki w tym teście. Przy 40% szumu i aktualizacji asynchronicznej odzysk na wspólnym bloku wyniósł 97%, a na pozostałych wariantach 100%.
+Wspólny blok podnosi pola od innych wzorców w górnej części. Gdy te pola głosują przeciw cechom oryginału, rozpoznanie kończy się podobną bitmapą (około 87% zgodnych pikseli w teście 3 przy 20% szumu dla Hebba), ale szczegóły ulegają zmianie. Próba kontrolna pokazuje, że przy tym samym rozmiarze i liczności wyniki wracają po rozproszeniu korelacji. Dla Oji wpływ jest niewielki w tym teście. Przy 40% szumu i aktualizacji asynchronicznej Oja odzyskała 98% obrazów 25×25 oraz 100% w obu wariantach 25×50.
 
 ## 3. Liczność, rodzaj zbioru i uszkodzenie
 
-W `large-25x25.plus`, przy 20% szumu i aktualizacji asynchronicznej, Hebb odzyskał 100% oryginałów dla pierwszych pięciu wzorców, 45% dla sześciu i 7% dla piętnastu. Oja uzyskała 100% dla wszystkich prefiksów. W literach 14×20 Hebb osiągnął 100% dla dwóch wzorców i 0% od trzech, a Oja 100% do czterech i 0% we wszystkich zbadanych prefiksach od szesnastu. Kolejne prefiksy zmieniają jednocześnie liczność i zestaw korelacji, dlatego spadek nie musi być jednostajny.
+W `large-25x25.plus`, przy 20% szumu i aktualizacji asynchronicznej, Hebb odzyskał 100% oryginałów dla pierwszych czterech wzorców, 94% dla pięciu, 53% dla sześciu i 7% dla piętnastu. Oja uzyskała 100% dla wszystkich prefiksów. W literach 14×20 Hebb osiągnął 100% dla dwóch wzorców i 0% od trzech, a Oja 100% do czterech i 0% we wszystkich zbadanych prefiksach od szesnastu. Kolejne prefiksy zmieniają jednocześnie liczność i zestaw korelacji, dlatego spadek nie musi być jednostajny.
 
-Dla pełnego zbioru `small-7x7` i Oji w trybie synchronicznym odzysk wyniósł 100% przy 20% szumu, 78% przy 30% i 24% przy 40%. Dla `large-25x25.plus` te trzy wyniki wyniosły po 100%. Na literach 14×20 dokładny odzysk wynosił 0% w obu regułach na wszystkich poziomach szumu, mimo około 90% zgodności pikseli przy szumie 20%.
+Dla pełnego zbioru `small-7x7` i Oji w trybie synchronicznym odzysk wyniósł 100% przy 20% szumu, 74% przy 30% i 18% przy 40%. Dla `large-25x25.plus` te trzy wyniki wyniosły po 100%. Na literach 14×20 dokładny odzysk wynosił 0% w obu regułach na wszystkich poziomach szumu, mimo około 90% zgodności pikseli przy szumie 20%.
 
-Losowe odwrócenie 20% pikseli porównano z zakryciem białym pasem 20% powierzchni (wysokość zaokrąglona do pełnych wierszy). Dla Hebba w trybie asynchronicznym pas obniżył odzysk na 25×25 z 45% do 33%, a w zbiorze zwierząt podniósł go z 5% do 8%. Biały pas zachowuje istniejące białe piksele, ale usuwa skorelowane przestrzennie fragmenty figury. Te protokoły badają dwa różne uszkodzenia.
+Losowe odwrócenie 20% pikseli porównano z zakryciem białym pasem 20% powierzchni (wysokość zaokrąglona do pełnych wierszy). Dla Hebba w trybie asynchronicznym pas obniżył odzysk na 25×25 z 43% do 33%, a w zbiorze zwierząt z 12% do 7%. Biały pas zachowuje istniejące białe piksele, ale usuwa skorelowane przestrzennie fragmenty figury. Te protokoły badają dwa różne uszkodzenia.
 
 ## 4. Grupy wzorców podobnych
 
@@ -76,7 +76,7 @@ Dla Hebba wszystkie 60 i 80 asynchronicznych prób na grupowanych podzbiorach za
 
 ## 5. Losowe wejście
 
-Na obrazach zwierząt Oja asynchroniczna dała 31 oryginałów, 35 negatywów i 34 stany pasożytnicze. Hebb asynchroniczny dał 1 oryginał i 99 stanów pasożytniczych. Na zestawie liter 14×20 Hebb kończył w dwóch stanach pasożytniczych, a Oja synchroniczna w 100 na 100 prób osiągała cykl dwustanowy. Dla Oji asynchronicznej każda z tych prób zakończyła się w punkcie stałym pasożytniczym. Losowy wektor trafia do basenu tego atraktora, w którego obszarze leży na wejściu. Negatywy pojawiają się naturalnie, bo przy braku progów zmiana wszystkich znaków odwraca następny stan i nie zmienia energii.
+Na obrazach zwierząt Oja asynchroniczna dała 42 oryginały, 37 negatywów i 21 stanów pasożytniczych. Hebb asynchroniczny dał 2 oryginały, 1 negatyw i 97 stanów pasożytniczych. Na zestawie liter 14×20 Hebb kończył w dwóch stanach pasożytniczych, a Oja synchroniczna w 99 na 100 prób osiągała cykl dwustanowy. Dla Oji asynchronicznej każda z tych prób zakończyła się w punkcie stałym pasożytniczym. Losowy wektor trafia do basenu tego atraktora, w którego obszarze leży na wejściu. Negatywy pojawiają się naturalnie, bo przy braku progów zmiana wszystkich znaków odwraca następny stan i nie zmienia energii.
 
 ## 6. Własne wzorce 5×5
 

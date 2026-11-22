@@ -44,10 +44,8 @@ impl RandomInputTest {
                 "", "wzorzec", "negatyw", "pasoż.", "cykl", "różnych", "kroki", "pod. pas."
             );
             let mut hit_rows: Vec<(&str, Vec<usize>)> = Vec::new();
-            let baseline: u64 = rng.random();
             for (net_name, net) in [("Hebb", &hebb), ("Oja", &oja)] {
                 for (mode_name, mode) in [("sync", Mode::Sync), ("async", Mode::Async)] {
-                    let mut rng = StdRng::seed_from_u64(baseline);
                     let stats: RandomStats = Self::random_stats(net, &ds.patterns, mode, &mut rng);
                     let sim_text: String = match stats.spurious_sim {
                         Some(sim) => format!("{:.2}", sim),
