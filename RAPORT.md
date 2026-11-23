@@ -3,13 +3,10 @@
 
   <img src="docs/logo-mini.jpg" width="112" height="112" alt="Logo Wydziału Matematyki i Nauk Informacyjnych">
   <p><strong>Politechnika Warszawska</strong><br>Wydział Matematyki i Nauk Informacyjnych<br>24.11.2026</p>
-
-
   <h1>Pamięć skojarzeniowa z użyciem sieci Hopfielda</h1>
   <p><strong>Autorzy</strong><br>Maksymilian Majewski<br>Łukasz Przybylski</p>
   <p><strong>Prowadzący</strong><br>mgr inż. Mikołaj Małkiński</p>
 </div>
-
 
 <div style="break-after: page; page-break-after: always;"></div>
 
