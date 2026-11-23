@@ -3,16 +3,16 @@ use crate::net::utility::{Dataset, Mode, OJA_EPOCHS, OJA_LR, OJA_TOL, SEED, Test
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
 
-/// TEST 5: reakcja nauczonej sieci na losowe wejście (punkt 6 projektu)
+/// TEST 5: trained network response to random inputs (project item 6)
 pub struct RandomInputTest;
 
-/// Wyniki dla jednej sieci i jednego trybu
+/// Results for one network and update mode
 struct RandomStats {
-    counts: [usize; 4],        // wzorzec, negatyw, pasożytniczy, cykl
-    distinct: usize,           // ile różnych stanów końcowych
-    mean_steps: f32,           // średnia liczba kroków
-    spurious_sim: Option<f32>, // średnie podobieństwo stanu pasożytniczego do najbliższego wzorca
-    hits: Vec<usize>,          // ile razy trafiono w każdy wzorzec (lub jego negatyw)
+    counts: [usize; 4],        // pattern, negative, spurious, cycle
+    distinct: usize,           // number of distinct final states
+    mean_steps: f32,           // mean number of steps
+    spurious_sim: Option<f32>, // mean similarity of spurious states to their closest pattern
+    hits: Vec<usize>,          // hits per pattern, including its negative
 }
 
 impl RandomInputTest {
@@ -20,20 +20,17 @@ impl RandomInputTest {
 
     pub fn run(datasets: &[Dataset]) {
         Utils::print_header(
-            "TEST 5: reakcja nauczonej sieci na losowe wejście",
-            "Podajemy losowe wektory ±1 i sprawdzamy, w jakim stanie sieć się\n\
-             zatrzymuje, ile różnych atraktorów odwiedza i jak duże są baseny\n\
-             przyciągania poszczególnych wzorców.",
+            "TEST 5: trained network response to random inputs",
+            "We feed the trained network random ±1 vectors and record final states,\n\
+             the attractors it visits, and how often it enters each pattern's basin\n\
+             of attraction.",
         );
         let mut rng: StdRng = StdRng::seed_from_u64(SEED);
-        println!(
-            "-- 5a. Gdzie ląduje sieć ({} losowych wejść) --",
-            Self::RANDOM_PROBES
-        );
-        println!("różnych   = liczba różnych stanów końcowych");
-        println!("kroki     = średnia liczba kroków do zatrzymania");
-        println!("pod. pas. = średnie podobieństwo stanu pasożytniczego do najbliższego wzorca");
-        println!("5b        = ile razy sieć trafiła w dany wzorzec (async, wzorzec lub negatyw)\n");
+        println!("-- 5a. Outcomes ({} random inputs) --", Self::RANDOM_PROBES);
+        println!("distinct  = number of distinct final states");
+        println!("steps     = mean number of steps before stopping");
+        println!("spur. sim. = mean similarity of spurious states to their closest pattern");
+        println!("5b        = hits per pattern in async mode, including its negative\n");
 
         for ds in datasets {
             let hebb: Hopfield = Hopfield::new_hebb(&ds.patterns);
@@ -41,7 +38,7 @@ impl RandomInputTest {
             println!("{} (N = {}):", ds.name, ds.patterns.len());
             println!(
                 "  {:<12}{:>9}{:>9}{:>8}{:>6}{:>9}{:>7}{:>11}",
-                "", "wzorzec", "negatyw", "pasoż.", "cykl", "różnych", "kroki", "pod. pas."
+                "", "pattern", "negative", "spurious", "cycle", "distinct", "steps", "spur. sim."
             );
             let mut hit_rows: Vec<(&str, Vec<usize>)> = Vec::new();
             for (net_name, net) in [("Hebb", &hebb), ("Oja", &oja)] {
@@ -67,9 +64,9 @@ impl RandomInputTest {
                     }
                 }
             }
-            println!("  5b. baseny przyciągania:");
+            println!("  5b. basins of attraction:");
             let nr_cells: Vec<String> = (0..ds.patterns.len()).map(|i| i.to_string()).collect();
-            Utils::print_cells(&format!("    {:<5}", "nr"), &nr_cells);
+            Utils::print_cells(&format!("    {:<5}", "index"), &nr_cells);
             for (net_name, hits) in &hit_rows {
                 let cells: Vec<String> = hits.iter().map(|h| h.to_string()).collect();
                 Utils::print_cells(&format!("    {:<5}", net_name), &cells);

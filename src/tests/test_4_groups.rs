@@ -3,7 +3,7 @@ use crate::net::utility::{Dataset, Mode, NOISE_REPEATS, OJA_EPOCHS, OJA_LR, OJA_
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
-/// TEST 4: zbiór z grupami podobnych wzorców vs zbiór zróżnicowany (punkt 5 projektu)
+/// TEST 4: clustered and diverse pattern sets (project item 5)
 pub struct GroupsTest;
 
 impl GroupsTest {
@@ -14,18 +14,18 @@ impl GroupsTest {
 
     pub fn run(datasets: &[Dataset]) {
         Utils::print_header(
-            "TEST 4: zbiór z grupami podobnych wzorców vs zbiór zróżnicowany",
-            "Z jednego pliku wybieramy dwa podzbiory tej samej liczności:\n\
-             zróżnicowany (wzorce możliwie różne) i z grupami (pary najbardziej\n\
-             podobnych wzorców). Ten sam rozmiar obrazków, to samo źródło.",
+            "TEST 4: clustered and diverse pattern sets",
+            "We select two subsets of equal size from one file.\n\
+             One contains diverse patterns and the other contains pairs of highly\n\
+             similar patterns. Both use the same image dimensions and source.",
         );
         let ds: &Dataset = Utils::find_dataset(datasets, Self::GROUP_SET);
         let mut rng: StdRng = StdRng::seed_from_u64(SEED);
-        println!("źródło: {} ({} wzorców)\n", ds.name, ds.patterns.len());
+        println!("source: {} ({} patterns)\n", ds.name, ds.patterns.len());
 
         for k in Self::GROUP_SIZES {
             println!(
-                "==================== k = {} wzorców ====================\n",
+                "==================== k = {} patterns ====================\n",
                 k
             );
             let prepared: Vec<(&str, Vec<Vec<f32>>, Hopfield, Hopfield)> = Self::chosen_sets(ds, k);
@@ -33,28 +33,28 @@ impl GroupsTest {
             Self::outcomes(&prepared, &mut rng);
             println!();
         }
-        println!("inny wz.  = sieć trafiła w INNY wzorzec ze zbioru (pomyłka)");
-        println!("inny stan = stan, który nie jest żadnym wzorcem ani negatywem (pasożytniczy)");
+        println!("other     = a different learned pattern");
+        println!("spurious  = a state outside the learned patterns and their negatives");
     }
 
-    /// 4a. wybór podzbiorów, ich podobieństwo i stabilność
+    /// 4a. Select subsets and measure their similarity and stability
     fn chosen_sets(
         ds: &Dataset,
         k: usize,
     ) -> Vec<(&'static str, Vec<Vec<f32>>, Hopfield, Hopfield)> {
-        println!("-- 4a. Wybrane zbiory --\n");
+        println!("-- 4a. Selected subsets --\n");
         let variants: [(&'static str, Vec<usize>); 2] = [
-            ("zróżnicowany", Self::diverse_subset(&ds.patterns, k)),
-            ("z grupami", Self::grouped_subset(&ds.patterns, k)),
+            ("diverse", Self::diverse_subset(&ds.patterns, k)),
+            ("clustered", Self::grouped_subset(&ds.patterns, k)),
         ];
         let mut prepared: Vec<(&'static str, Vec<Vec<f32>>, Hopfield, Hopfield)> = Vec::new();
         for (name, idxs) in variants {
             let subset: Vec<Vec<f32>> = idxs.iter().map(|&i| ds.patterns[i].clone()).collect();
             let hebb: Hopfield = Hopfield::new_hebb(&subset);
             let oja: Hopfield = Hopfield::new_oja(&subset, OJA_LR, OJA_EPOCHS, OJA_TOL);
-            println!("{}: wzorce {:?}", name, idxs);
+            println!("{}: patterns {:?}", name, idxs);
             println!(
-                "  podob. = {:.3}, max pod. = {:.3}, stabilne: Hebb {}/{}, Oja {}/{}",
+                "  overlap = {:.3}, max overlap = {:.3}, stable: Hebb {}/{}, Oja {}/{}",
                 Utils::mean_similarity(&subset),
                 Utils::most_similar_pair(&subset).2,
                 Utils::count_stable(&hebb, &subset),
@@ -64,13 +64,13 @@ impl GroupsTest {
             );
             prepared.push((name, subset, hebb, oja));
         }
-        println!("(z grupami: kolejne dwójki numerów to pary najbardziej podobnych wzorców)");
+        println!("(Clustered indices are listed in pairs of most similar patterns.)");
         prepared
     }
 
-    /// 4b. odtwarzanie przy kilku poziomach szumu
+    /// 4b. Measure recovery at several noise levels
     fn noise_recovery(prepared: &[(&str, Vec<Vec<f32>>, Hopfield, Hopfield)], rng: &mut StdRng) {
-        println!("\n-- 4b. Odtwarzanie z szumu (async, odsetek dokładnie odtworzonych) --\n");
+        println!("\n-- 4b. Recovery from noise (async, fraction recovered exactly) --\n");
         print!("  {:<20}", "");
         for level in Self::GROUP_NOISE {
             print!("{:>7}", format!("{:.0}%", level * 100.0));
@@ -89,16 +89,16 @@ impl GroupsTest {
         }
     }
 
-    /// 4c. w jakim stanie kończy sieć
+    /// 4c. Classify the final state
     fn outcomes(prepared: &[(&str, Vec<Vec<f32>>, Hopfield, Hopfield)], rng: &mut StdRng) {
         println!(
-            "\n-- 4c. Gdzie ląduje sieć (szum {:.0}%, async, {} prób na wzorzec) --\n",
+            "\n-- 4c. Outcomes ({:.0}% noise, async, {} trials per pattern) --\n",
             Self::OUTCOME_NOISE * 100.0,
             NOISE_REPEATS
         );
         println!(
             "  {:<20}{:>10}{:>10}{:>10}{:>11}",
-            "", "oryginał", "inny wz.", "negatyw", "inny stan"
+            "", "original", "other", "negative", "spurious"
         );
         for (name, subset, hebb, oja) in prepared {
             for (net_name, net) in [("Hebb", hebb), ("Oja", oja)] {

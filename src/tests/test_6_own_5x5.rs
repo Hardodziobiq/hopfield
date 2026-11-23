@@ -2,36 +2,36 @@
 use crate::net::hopfield::Hopfield;
 use crate::net::utility::{OJA_EPOCHS, OJA_LR, OJA_TOL, Utils};
 
-/// TEST 6: własne zbiory 5x5 - stabilny zbiór i oscylacja (punkty 7 i 8 projektu)
+/// TEST 6: custom 5x5 patterns for stability and oscillation (project items 7 and 8)
 pub struct Own5x5Test;
 
 impl Own5x5Test {
     const STABLE_SET: &'static str = "src/own/stable-5x5.csv";
     const OSC_TRAIN: &'static str = "src/own/oscillation-train-5x5.csv";
     const OSC_INPUT: &'static str = "src/own/oscillation-input-5x5.csv";
-    const OSC_NAMES: [&'static str; 2] = ["krzyż", "X"];
+    const OSC_NAMES: [&'static str; 2] = ["cross", "X"];
 
     pub fn run() {
         Utils::print_header(
-            "TEST 6: własne zbiory 5x5",
-            "6a: możliwie liczny zbiór wektorów długości 25, w którym wszystkie\n\
-             wzorce są stabilne (reguła Hebba).\n\
-             6b: zbiór uczący i wejście, które w trybie synchronicznym kończy się\n\
-             oscylacją między dwoma stanami.",
+            "TEST 6: custom 5x5 patterns",
+            "6a: Find a large set of 25-element vectors that are all stable\n\
+             under Hebbian learning.\n\
+             6b: Choose a training set and an input that produce a two-state\n\
+             cycle under synchronous updates.",
         );
         Self::stable_set();
         Self::oscillation();
     }
 
-    /// 6a. zbiór 19 prawie ortogonalnych wektorów
+    /// 6a. Set of 19 nearly orthogonal vectors
     fn stable_set() {
-        println!("-- 6a. Stabilny zbiór 5x5 --");
+        println!("-- 6a. Stable 5x5 pattern set --");
         println!(
-            "Budowa: 24 parami ortogonalne wiersze macierzy Hadamarda rzędu 24\n\
-             (konstrukcja Paleya) z dopisanym 25. pikselem = +1, więc każda para ma\n\
-             iloczyn skalarny 1. Teoria: margines = 26 - 2N > 0 dla N <= 12.\n\
-             Losowe przeszukiwanie podzbiorów i znaków wierszy dało większy zbiór.\n\
-             (dla porównania: losowe wektory dokładane zachłannie dały 13 wzorców)\n"
+            "Start with the 24 pairwise orthogonal rows of a Hadamard matrix\n\
+             of order 24 (Paley construction). Append a 25th pixel of +1 so that\n\
+             each pair has dot product 1. The margin is 26 - 2N > 0 for N <= 12.\n\
+             Randomly searching subsets and row signs yielded a larger set.\n\
+             A greedy search adding random vectors yielded 13 patterns.\n"
         );
         let (patterns, width, height) = Utils::load_patterns(Self::STABLE_SET);
         let k: usize = patterns.len();
@@ -39,17 +39,17 @@ impl Own5x5Test {
         let hebb: Hopfield = Hopfield::new_hebb(&patterns);
         let oja: Hopfield = Hopfield::new_oja(&patterns, OJA_LR, OJA_EPOCHS, OJA_TOL);
         println!(
-            "zbiór: {} wzorców, N/n = {:.2} (pojemność dla losowych ~0.138)",
+            "set: {} patterns, N/n = {:.2} (capacity for random patterns ~0.138)",
             k,
             k as f32 / n as f32
         );
         println!(
-            "min. margines Hebba = {} (> 0 = wszystkie stabilne), max podobieństwo par = {:.3}",
+            "min. Hebbian margin = {} (> 0 means all stable), max pairwise overlap = {:.3}",
             Self::hebb_min_margin(&patterns),
             Utils::most_similar_pair(&patterns).2
         );
         println!(
-            "stabilne: Hebb {}/{}, Oja {}/{}\n",
+            "stable: Hebb {}/{}, Oja {}/{}\n",
             Utils::count_stable(&hebb, &patterns),
             k,
             Utils::count_stable(&oja, &patterns),
@@ -58,32 +58,32 @@ impl Own5x5Test {
         Self::print_bitmaps(&patterns, width, height, 10);
     }
 
-    /// 6b. krzyż + X, wejście: ramka
+    /// 6b. Train on a cross and an X, then use a frame as input
     fn oscillation() {
-        println!("-- 6b. Oscylacja w trybie synchronicznym --\n");
+        println!("-- 6b. Oscillation under synchronous updates --\n");
         let (training, width, height) = Utils::load_patterns(Self::OSC_TRAIN);
         let (inputs, _, _) = Utils::load_patterns(Self::OSC_INPUT);
         let input: &Vec<f32> = &inputs[0];
         let net: Hopfield = Hopfield::new_hebb(&training);
 
         println!(
-            "zbiór uczący (Hebb): krzyż, X, stabilne: {}/{}",
+            "Hebbian training set: cross, X. Stable: {}/{}",
             Utils::count_stable(&net, &training),
             training.len()
         );
         Self::print_bitmaps(&training, width, height, 10);
-        println!("wejście: ramka");
+        println!("input: frame");
         Self::print_bitmaps(&inputs, width, height, 10);
 
         let mut probe: Vec<f32> = input.clone();
         let (history, end) = net.synchronized_test(&mut probe);
-        println!("tryb synchroniczny, wynik: {:?}, kolejne stany:", end);
+        println!("Synchronous updates. Result: {:?}. State history:", end);
         Self::print_bitmaps(&history, width, height, 10);
 
         let mut probe: Vec<f32> = input.clone();
         let history: Vec<Vec<f32>> = net.asynchronized_test(&mut probe);
         println!(
-            "tryb asynchroniczny dla tego samego wejścia: {} kroki, stan końcowy: {}",
+            "Asynchronous updates on the same input. Steps: {}. Final state: {}",
             history.len() - 1,
             Self::describe_state(&probe, &training)
         );
@@ -123,10 +123,10 @@ impl Own5x5Test {
                 return name.to_string();
             }
             if pattern.iter().zip(state.iter()).all(|(a, b)| *a == -*b) {
-                return format!("negatyw ({})", name);
+                return format!("negative ({})", name);
             }
         }
-        "stan pasożytniczy".to_string()
+        "spurious state".to_string()
     }
     /// Patterns as bitmaps side by side ('#' = black, '.' = white)
     fn print_bitmaps(patterns: &[Vec<f32>], width: usize, height: usize, per_row: usize) {

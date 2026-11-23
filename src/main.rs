@@ -6,16 +6,43 @@ use hopfield::tests::test_4_groups::GroupsTest;
 use hopfield::tests::test_5_random_input::RandomInputTest;
 use hopfield::tests::test_6_own_5x5::Own5x5Test;
 
+mod large_experiment;
+mod viz;
+mod viz_2;
+
 const DATA_DIR: &str = "src/data";
 
 /// cargo run --release -- test_number_1 test_number_2 etc.
-fn main() {
-    let args: Vec<usize> = std::env::args()
-        .skip(1)
-        .filter_map(|a| a.parse().ok())
-        .collect();
+fn main() -> Result<(), String> {
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    match args.first().map(String::as_str) {
+        Some("viz") => return viz::run(&args[1..]),
+        Some("viz2") => return viz_2::run(&args[1..]),
+        Some("-h" | "--help") => {
+            println!(
+                "cargo run --release -- [1 2 3 4 5 6 7]\ncargo run --release -- {}\ncargo run --release -- {}",
+                viz::USAGE,
+                viz_2::USAGE
+            );
+            return Ok(());
+        }
+        _ => {}
+    }
+    let args: Vec<usize> = args
+        .iter()
+        .map(|arg| match arg.parse() {
+            Ok(number @ 1..=7) => Ok(number),
+            _ => Err(format!(
+                "Unknown experiment {arg}. Use a number from 1 to 7 or --help."
+            )),
+        })
+        .collect::<Result<_, _>>()?;
     let selected = |nr: usize| args.is_empty() || args.contains(&nr);
-    let datasets: Vec<Dataset> = Utils::load_datasets(DATA_DIR);
+    let datasets: Vec<Dataset> = if (1..=5).any(selected) {
+        Utils::load_datasets(DATA_DIR)
+    } else {
+        Vec::new()
+    };
 
     if selected(1) {
         StabilityTest::run(&datasets);
@@ -35,4 +62,8 @@ fn main() {
     if selected(6) {
         Own5x5Test::run();
     }
+    if args.contains(&7) {
+        large_experiment::run()?;
+    }
+    Ok(())
 }
