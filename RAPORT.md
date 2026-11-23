@@ -304,31 +304,17 @@ Poza literami 14×20 od 45 do 88 wejść kończyło we wzorcu lub negatywie, a l
 Cykle pojawiały się najczęściej dla liter 14×20 po regule Oji (99 na 100 wejść) i dla `small-7x7` po regule Oji (25). Tryb asynchroniczny potrzebował mniej kroków, na przykład 4,4 zamiast 10,4 dla `large-25x25.plus` po regule Oji.
 
 ### 4.6. Własne wzorce 5×5 i cykl dwustanowy
-**Zbiór stabilny.** Przesłuch znika, gdy wzorce są ortogonalne. Dla $n=25$ wektory $\pm1$ nie mogą być ortogonalne, bo ich iloczyn skalarny jest nieparzysty, więc najmniejsze możliwe podobieństwo pary to $1/25$. Wzięliśmy 24 parami ortogonalne wiersze macierzy Hadamarda rzędu 24 (konstrukcja Paleya) i dopisaliśmy do każdego 25. piksel równy $+1$, dzięki czemu każda para ma iloczyn skalarny równy 1. Wtedy minimalny margines stabilności $x_i^{(q)}z_i$ (bez czynnika $1/n$) wynosi $26-2N$, więc pierwsze 12 wierszy jest na pewno stabilnych. Losowe przeszukiwanie wyboru wierszy i ich znaków dało zbiór 19 wzorców z dodatnim marginesem (plik `src/own/stable-5x5.csv`).
+**Zbiór stabilny.** Proponujemy zbiór 19 wzorców 5×5 (plik `src/own/stable-5x5.csv`), dobranych tak, by były możliwie niepodobne: każda para zgadza się na 13 z 25 pikseli, czyli $o_{pq}=1/25$, najmniej, ile się da przy nieparzystym $n$. Przesłuch jest wtedy bardzo mały i reguła Hebba utrzymuje wszystkie wzorce przy obciążeniu 0,76.
 
 | Zbiór | Liczba wzorców | $\alpha$ | Hebb stabilne | Oja stabilne |
 | --- | ---: | ---: | ---: | ---: |
 | Pojemność dla wzorców losowych | ≈ 3,5 | 0,138 | – | – |
 | Losowe wektory dokładane zachłannie | 13 | 0,52 | 13/13 | – |
-| Wiersze macierzy Hadamarda | 19 | 0,76 | 19/19 | 10/19 |
+| Proponowany zbiór | 19 | 0,76 | 19/19 | 10/19 |
 
-Minimalny margines wyniósł $2/25$. Przy wzorcach dobranych tak, by były możliwie niepodobne, reguła Hebba mieści kilka razy więcej wzorców niż wynika z pojemności dla wzorców losowych. Oja przy tak dużym obciążeniu zbiega do kompromisu opisanego w sekcji 2 i traci 9 wzorców.
+Przy wzorcach możliwie niepodobnych reguła Hebba mieści kilka razy więcej wzorców, niż wynika z pojemności dla wzorców losowych. Oja przy tak dużym obciążeniu zbiega do kompromisu opisanego w sekcji 2 i traci 9 wzorców.
 
-**Liczniejsza rodzina, stabilna bez pamięci.** W pierwszych 22 pozycjach wybieramy dowolne 11 pikseli o wartości $+1$, pozostałe mają $-1$, a ostatnie trzy piksele mają wspólny znak. W każdym wzorcu pierwsze 22 piksele sumują się do zera, więc średni iloczyn dwóch różnych pozycji z tego bloku wynosi $-1/21$, w ostatniej trójce $1$, a między blokami $0$. Po uczeniu na wszystkich takich wzorcach
-
-$$
-N = 2\binom{22}{11}=1\,410\,864,
-\qquad
-x_i^{(q)}z_i =
-\begin{cases}
-\dfrac{N}{21\cdot 25}, & 1\le i\le 22,\\[4pt]
-\dfrac{2N}{25}, & 23\le i\le 25,
-\end{cases}
-$$
-
-więc każdy wzorzec jest punktem stałym. Wagi nie zapamiętują jednak konkretnych obrazów, tylko regułę „połowa pierwszych 22 pikseli czarna, ostatnie trzy jednakowe”. Po odwróceniu jednego piksela w pierwszym bloku suma tego bloku przestaje być zerowa i pole odwraca pierwszy w kolejności piksel o tym samym kolorze co uszkodzony, po czym suma znowu wynosi zero i sieć się zatrzymuje. Oryginał wraca tylko wtedy, gdy tym pierwszym pikselem jest akurat piksel uszkodzony. Rodzina pokazuje, że stabilność wzorców nie wystarcza do działania pamięci.
-
-Jeśli dopuścić zerowe pole, punktami stałymi są wszystkie wzorce z dokładnie 12 lub 13 pikselami $+1$, czyli $2\binom{25}{12}=10\,400\,600$ wzorców. Formalnym maksimum są wszystkie $2^{25}$ bitmapy, ale wtedy wkłady się znoszą, $\mathbf W=\mathbf 0$ i sieć nie zmienia żadnego wejścia.
+**Liczniejszy zbiór, stabilny bez pamięci.** Jeszcze więcej stabilnych wzorców daje rodzina $2\binom{22}{11}=1\,410\,864$ bitmap, w których pierwsze 22 piksele są w połowie czarne, a ostatnie trzy mają jednakowy kolor. Po uczeniu Hebbem każda z nich jest punktem stałym, ale wagi zapamiętują tylko tę regułę, a nie konkretne obrazy: po odwróceniu jednego piksela sieć poprawia pierwszy w kolejności piksel, który przywraca regułę, i zwykle kończy w innym wzorcu niż oryginał. Stabilność wzorców nie wystarcza więc do działania pamięci.
 
 **Cykl.** Hebba uczymy na krzyżu i znaku X, a na wejście podajemy ramkę. Znak `#` oznacza czarny piksel.
 
@@ -341,7 +327,7 @@ Wejście    Krok 1    Krok 2
 #####      .#.#.     #####
 ```
 
-W obu stanach iloczyn skalarny z każdym wzorcem uczącym wynosi $-9$, więc $m_{\text{krzyż}}=m_{\text X}=-9/25$. Na 16 pozycjach, na których krzyż i X mają przeciwne znaki, ich głosy się znoszą i zostaje $z_i=-2a_i/25$, czyli każdy z tych pikseli dąży do odwrócenia. W trybie synchronicznym wszystkie 16 odwraca się jednocześnie, nowy stan znowu ma podobieństwo $-9/25$ do obu wzorców i w następnym kroku piksele wracają. W trybie asynchronicznym pierwsze odwrócenie zmienia podobieństwa do krzyża i do X, remis znika, a sieć w jednym przejściu kończy w negatywie znaku X.
+Ramka i stan z kroku 1 są tak samo podobne do krzyża, jak do X ($m_{\text{krzyż}}=m_{\text X}=-9/25$). Na 16 pikselach, na których krzyż i X się różnią, ich głosy się znoszą i każdy z tych pikseli dąży do odwrócenia. W trybie synchronicznym wszystkie 16 odwraca się jednocześnie, remis się powtarza i w następnym kroku piksele wracają. W trybie asynchronicznym pierwsze odwrócenie przechyla remis na korzyść jednego wzorca i sieć w jednym przejściu kończy w negatywie znaku X.
 
 ### 4.7. Bitmapy 200×300
 **Dane:** Użyliśmy fotografii `camera`, `coins` i `moon`. Średnie podobieństwo par wyniosło 0,159. Zarówno reguła Hebba jak i Oja zachowały 3/3 wzorców.
