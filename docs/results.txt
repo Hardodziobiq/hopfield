@@ -439,7 +439,7 @@ spur. sim. = mean similarity of spurious states to their closest pattern
 5b        = hits per pattern in async mode, including its negative
 
 OCRA-12x30-cut.csv (N = 7):
-                pattern negativespurious cycle distinct  steps spur. sim.
+                pattern negative spurious cycle distinct  steps spur. sim.
   Hebb sync           0        1      99     0       10    5.4       0.72
   Hebb async          1        1      98     0       10    2.7       0.74
   Oja sync           23       23      54     0       68    3.6       0.66
@@ -450,7 +450,7 @@ OCRA-12x30-cut.csv (N = 7):
     Oja      8    3    9   11    6    8    4
 
 animals-14x9.csv (N = 6):
-                pattern negativespurious cycle distinct  steps spur. sim.
+                pattern negative spurious cycle distinct  steps spur. sim.
   Hebb sync           2        1      97     0        5    4.4       0.68
   Hebb async          2        1      97     0        4    2.3       0.68
   Oja sync           30       28      41     1       51    3.2       0.64
@@ -461,7 +461,7 @@ animals-14x9.csv (N = 6):
     Oja     22    8   11   12   10   16
 
 large-25x25.csv (N = 6):
-                pattern negativespurious cycle distinct  steps spur. sim.
+                pattern negative spurious cycle distinct  steps spur. sim.
   Hebb sync           5       10      85     0       31    3.5       0.77
   Hebb async         10        2      88     0       21    2.0       0.80
   Oja sync           23       28      49     0       61    2.8       0.60
@@ -472,7 +472,7 @@ large-25x25.csv (N = 6):
     Oja     11   16   11   11   19    8
 
 large-25x25.plus.csv (N = 15):
-                pattern negativespurious cycle distinct  steps spur. sim.
+                pattern negative spurious cycle distinct  steps spur. sim.
   Hebb sync           0        0     100     0        2    5.1       0.71
   Hebb async          0        0     100     0        2    2.3       0.71
   Oja sync           34       37      29     0       56   10.4       0.55
@@ -486,7 +486,7 @@ large-25x25.plus.csv (N = 15):
              8    1
 
 large-25x50.csv (N = 6):
-                pattern negativespurious cycle distinct  steps spur. sim.
+                pattern negative spurious cycle distinct  steps spur. sim.
   Hebb sync           0        0     100     0       10    3.3       0.84
   Hebb async          0        0     100     0       10    2.2       0.85
   Oja sync           21       32      47     0       56    3.0       0.81
@@ -497,7 +497,7 @@ large-25x50.csv (N = 6):
     Oja     10    4   13   17    9   10
 
 letters-14x20.csv (N = 26):
-                pattern negativespurious cycle distinct  steps spur. sim.
+                pattern negative spurious cycle distinct  steps spur. sim.
   Hebb sync           0        0     100     0        2    4.3       0.93
   Hebb async          0        0     100     0        2    2.9       0.93
   Oja sync            0        0       1    99       98   12.1       0.86

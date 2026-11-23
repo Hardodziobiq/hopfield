@@ -64,40 +64,6 @@ impl Hopfield {
         }
         weights
     }
-    // fn weights_oja(
-    //     patterns: &Vec<Vec<f32>>,
-    //     n: usize,
-    //     learning_rate: f32,
-    //     epoch_count: usize,
-    //     tol: f32,
-    // ) -> Vec<Vec<f32>> {
-    //     let mut weights: Vec<Vec<f32>> = Self::weights_hebb(patterns, n);
-    //     for _ in 0..epoch_count {
-    //         let mut max_change: f32 = 0.0;
-    //         for pattern in patterns {
-    //             let y: Vec<f32> = Self::matrix_times_vector(&weights, pattern);
-    //             let v: Vec<f32> = Self::matrix_t_times_vector(&weights, &y);
-    //             for i in 0..n {
-    //                 for j in 0..n {
-    //                     if i == j {
-    //                         continue;
-    //                     }
-    //                     let d: f32 = learning_rate * y[i] * (pattern[j] - v[j]);
-    //                     if !d.is_finite() {
-    //                         panic!("Oja: weights diverged (NaN/inf), decrease learning_rate!");
-    //                     }
-    //                     weights[i][j] += d;
-    //                     max_change = max_change.max(d.abs());
-    //                 }
-    //             }
-    //         }
-    //         Self::sym(&mut weights, n);
-    //         if max_change < tol {
-    //             break;
-    //         }
-    //     }
-    //     weights
-    // }
     fn weights_oja(
         patterns: &Vec<Vec<f32>>,
         n: usize,
