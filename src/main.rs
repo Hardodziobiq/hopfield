@@ -8,6 +8,7 @@ use hopfield::tests::test_6_own_5x5::Own5x5Test;
 
 mod large_experiment;
 mod viz;
+mod viz_2;
 
 const DATA_DIR: &str = "src/data";
 
@@ -16,10 +17,12 @@ fn main() -> Result<(), String> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("viz") => return viz::run(&args[1..]),
+        Some("viz2") => return viz_2::run(&args[1..]),
         Some("-h" | "--help") => {
             println!(
-                "cargo run --release -- [1 2 3 4 5 6 7]\ncargo run --release -- {}",
-                viz::USAGE
+                "cargo run --release -- [1 2 3 4 5 6 7]\ncargo run --release -- {}\ncargo run --release -- {}",
+                viz::USAGE,
+                viz_2::USAGE
             );
             return Ok(());
         }

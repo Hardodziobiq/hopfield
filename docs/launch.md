@@ -24,3 +24,13 @@ Open the generated HTML file in a browser. Use the slider and buttons to view th
 The command takes `viz DATASET INDEX hebb|oja sync|async NOISE_PERCENT OUTPUT.html [INPUT]`. The zero-based index selects a pattern from the optional input or, if omitted, from the training dataset. The image dimensions determine the number of neurons.
 
 A CSV file stores one pattern per row, with +1 for black and −1 for white. Include the dimensions in the filename, for example `patterns-10x15.csv`. You can also pass a plain PBM (P1) image or a directory of such images with matching dimensions. The program reads PBM files in alphabetical order.
+
+## Step-by-step visualization
+
+```sh
+cargo run --release -- viz2 src/data/large-25x25.csv 0 oja async 30 target/steps.html
+cargo run --release -- viz2 src/data/large-25x25.plus.csv 1 hebb async 20 target/steps-spurious.html
+cargo run --release -- viz2 src/large 0 hebb async 30 target/steps-large.html
+```
+
+`viz2` takes the same arguments as `viz`. In `async` mode it splits every pass into about 25 frames, each covering a few rows of the image, and skips frames in which nothing changes. The slider then shows how the noise disappears row by row inside a pass. In `sync` mode all neurons change at once, so each step is one frame, as in `viz`. The page shows the clean pattern next to the network state, and every frame reports how many pixels still differ from it. The program prints the number of steps and frames after writing the file.
