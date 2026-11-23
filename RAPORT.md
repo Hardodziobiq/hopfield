@@ -3,18 +3,14 @@
 
   <img src="docs/logo-mini.jpg" width="112" height="112" alt="Logo Wydziału Matematyki i Nauk Informacyjnych">
   <p><strong>Politechnika Warszawska</strong><br>Wydział Matematyki i Nauk Informacyjnych<br>24.11.2026</p>
-
-
   <h1>Pamięć skojarzeniowa z użyciem sieci Hopfielda</h1>
   <p><strong>Autorzy</strong><br>Maksymilian Majewski<br>Łukasz Przybylski</p>
   <p><strong>Prowadzący</strong><br>mgr inż. Mikołaj Małkiński</p>
 </div>
 
-
 <div style="break-after: page; page-break-after: always;"></div>
 
 ## Oznaczenia
-
 
 | Symbol lub nazwa w kodzie | Znaczenie |
 | --- | --- |
@@ -32,11 +28,11 @@
 
 Sieć Hopfielda ma odtworzyć zapamiętaną bitmapę na podstawie uszkodzonego wejścia. Porównaliśmy uczenie regułą Hebba i regułą Oji oraz dwa tryby aktualizacji neuronów.
 
-**Główny wynik.** Na ośmiu dostarczonych zbiorach Hebb zachował 12 z 74 wzorców jako punkty stałe, a Oja 48 z 74. Na trzech bitmapach 200×300 obie reguły odtwarzały oryginały we wszystkich próbach przy szumie do 40%.
+**Główny wynik.** Na ośmiu zbiorach po uczeniu regułą Hebba stabilnych było 12 z 74 wzorców, a po uczeniu regułą Oji 48 z 74. Na trzech bitmapach 200×300 obie metody odtworzyły oryginały we wszystkich próbach przy szumie do 40%.
 
 ## 1. Aktualizacja neuronów i wizualizacja
 
-Neuron sumuje ważone stany i pobudzenie zewnętrzne. Wariant grupowy Oji zachowuje znak także wtedy, gdy moduł preaktywacji nie przekracza $10^{-10}$.
+Neuron sumuje ważone stany i pobudzenie zewnętrzne. Znak tej sumy wyznacza nowy stan. Przy zerowej preaktywacji neuron zachowuje dotychczasowy stan. Wariant grupowy Oji stosuje tę samą zasadę, gdy moduł preaktywacji nie przekracza $10^{-10}$.
 
 $$
 z_i^{(t+1)} = \sum_{j=1}^{n} w_{ij} a_j^{(t)} + b_i,
@@ -54,7 +50,9 @@ $$
 | Synchroniczny (`sync`) | Wszystkie neurony korzystają z tego samego stanu z początku kroku. | Punkt stały lub cykl dwustanowy. |
 | Asynchroniczny (`async`) | W pojedynczej aktualizacji zmienia się najwyżej jeden neuron $k$. Następny neuron widzi już tę zmianę. | Pełne przejście bez zmian. |
 
-**Zbieżność.** Przy symetrycznych wagach i zerowej przekątnej każda rzeczywista asynchroniczna zmiana neuronu $k$ zmniejsza energię. Stanów jest skończenie wiele, więc w modelu dokładnym po skończonej liczbie zmian sieć osiąga punkt stały. Aktualizacja synchroniczna może też zakończyć się cyklem długości 2. [1, 5, 6, slajdy 19 i 27–28]
+**Wizualizacja.** Wymiary bitmapy wyznaczają liczbę neuronów. Program zapisuje stan wejściowy i kolejne stany sieci do pliku HTML z suwakiem. W trybie asynchronicznym jedna klatka odpowiada pełnemu przejściu po neuronach.
+
+**Zbieżność.** Przy symetrycznych wagach i zerowej przekątnej każda rzeczywista asynchroniczna zmiana neuronu $k$ zmniejsza energię. Stanów jest skończenie wiele, więc sieć osiąga punkt stały. Aktualizacja synchroniczna może też zakończyć się cyklem długości 2. [1, 5, 6, slajdy 19 i 27–28]
 
 $$
 E(\mathbf a) = -\frac12 \mathbf a^\top\mathbf W\mathbf a - \mathbf b^\top\mathbf a,
@@ -68,7 +66,7 @@ $$
 
 ### Reguła Hebba
 
-**Wzór w implementacji.** [6, slajd 13]
+**Wzór w implementacji.** Funkcja `weights_hebb` sumuje wkłady wszystkich wzorców uczących. Symbol $\mathbf I$ oznacza macierz jednostkową. [6, slajd 13]
 
 $$
 w_{ij} =
@@ -80,7 +78,7 @@ w_{ij} =
 \mathbf W=\frac{1}{n}\left(\mathbf X\mathbf X^\top-N\mathbf I\right).
 $$
 
-**Rozpoznawanie.** Po podstawieniu wag Hebba do preaktywacji każdy wzorzec wnosi wkład proporcjonalny do $m_p$. [1, 6, slajd 16]
+**Rozpoznawanie.** Każdy wzorzec wpływa na znak pola lokalnego proporcjonalnie do swojego podobieństwa $m_p$ do bieżącego stanu. Jeśli wejście jest bliskie oryginałowi, jego wkład może skorygować błędne piksele. [6, slajd 16]
 
 $$
 m_p=\frac{1}{n}\bigl(\mathbf x^{(p)}\bigr)^\top\mathbf a,
@@ -88,7 +86,7 @@ m_p=\frac{1}{n}\bigl(\mathbf x^{(p)}\bigr)^\top\mathbf a,
 z_i=\sum_{p=1}^{N}m_p x_i^{(p)}-\frac{N}{n}a_i.
 $$
 
-**Sygnał i przesłuch.** Dla $\mathbf a=\mathbf x^{(q)}$ zapis z wykładu oddziela wkład wzorca $q$ i przesłuch $C_i^{(q)}$ od pozostałych wzorców. Jeśli przesłuch zmienia znak $z_i$ na przeciwny do $x_i^{(q)}$, piksel się odwraca. Ściśle dodatni iloczyn $x_i^{(q)}z_i$ oznacza ścisłą stabilność piksela. Reguła zachowania stanu pozwala też na remis. [6, slajdy 18 i 22]
+**Sygnał i przesłuch.** Dla $\mathbf a=\mathbf x^{(q)}$ pierwszy składnik podtrzymuje znak piksela oryginału, a $C_i^{(q)}$ opisuje wpływ pozostałych wzorców. Piksel zachowuje stan, gdy $x_i^{(q)}z_i\geq 0$. Przy dodatnim iloczynie jest ściśle stabilny. [6, slajdy 18 i 22]
 
 $$
 \begin{aligned}
@@ -99,17 +97,15 @@ C_i^{(q)} &= \frac1n\sum_{p\ne q} x_i^{(p)}
 \end{aligned}
 $$
 
-Duże podobieństwo wzorców zwiększa przesłuch i może zmienić piksele, które je odróżniają. Wartość $\alpha_c\approx 0{,}138$ dotyczy klasycznego modelu z losowymi wzorcami i odzysku z niewielką liczbą błędnych bitów [2, 6, slajd 33]. Dokładny odzysk skorelowanych bitmap trzeba oceniać na konkretnych danych.
-
 ### Reguła Oji
 
-**Skąd bierze się korekta?** Dla jednego neuronu z wektorem wag $\mathbf w$ i odpowiedzią $y=\mathbf w^\top\mathbf x$ reguła Oji dodaje do składnika Hebba korektę, która rośnie wraz z kwadratem odpowiedzi. W klasycznym modelu jednego neuronu pozwala to wydobyć główną składową danych. [3]
+Dla jednego neuronu z wektorem wag $\mathbf w$ i odpowiedzią $y=\mathbf w^\top\mathbf x$ reguła Oji dodaje do składnika Hebba korektę, która rośnie wraz z kwadratem odpowiedzi. [3]
 
 $$
 \Delta\mathbf w = \eta y\mathbf x - \eta y^2\mathbf w.
 $$
 
-**Kolejność w kodzie.** `weights_oja` startuje od macierzy Hebba. Dzieli ją przez największą sumę modułów w wierszu, jeżeli jest dodatnia. Dla kolejnych wzorców uczących $\mathbf x=\mathbf x^{(p)}$ stosuje wariant wielowyjściowy [4].
+**Kolejność w kodzie.** Funkcja `weights_oja` zaczyna od macierzy Hebba. Dzieli ją przez największą sumę modułów wag w wierszu, jeśli ta suma jest dodatnia. Następnie dla kolejnych wzorców uczących $\mathbf x=\mathbf x^{(p)}$ stosuje wariant wielowyjściowy [4].
 
 $$
 \begin{aligned}
@@ -122,16 +118,16 @@ w_{ij} &\leftarrow w_{ij}+\eta\,y_i(x_j-v_j)
 \end{aligned}
 $$
 
-Po każdej epoce program symetryzuje macierz, $\mathbf W\leftarrow(\mathbf W+\mathbf W^\top)/2$, i sprawdza największą bezwzględną poprawkę. Przekątna pozostaje zerowa. Uczenie kończy się po 300 epokach lub gdy największa poprawka spadnie poniżej $10^{-6}$.
+Po każdej epoce program symetryzuje macierz, $\mathbf W\leftarrow(\mathbf W+\mathbf W^\top)/2$, i sprawdza największy moduł poprawki. Uczenie kończy się, gdy ta wartość spadnie poniżej $10^{-6}$ lub gdy minie 300 epok.
 
-**Dlaczego pomaga w pamięci?** Jeśli rekonstrukcja $\mathbf v$ dobrze oddaje wspólne tło obrazów, różnica $\mathbf x-\mathbf v$ na tych pikselach maleje. Kolejne obrazy słabiej wzmacniają wspólne tło, a cechy odróżniające wzorce mogą nadal wpływać na wagi. Stabilność uzyskanych wzorców sprawdzamy po zakończeniu uczenia.
+**Dlaczego to pomaga?** Jeśli $\mathbf v$ dobrze odtwarza wspólne tło obrazów, różnica $\mathbf x-\mathbf v$ jest mała na jego pikselach. Kolejne aktualizacje słabiej wzmacniają tło, a piksele odróżniające wzorce nadal wpływają na wagi.
 
 ### Obliczenia dla dużych bitmap
 
-Wizualizacja i eksperyment 7 używają pełnej macierzy dla najwyżej 2048 pikseli. Dla większych obrazów program wybiera jedną z dwóch reprezentacji.
+W wizualizacji i eksperymencie 7 dla obrazów powyżej 2048 pikseli program wybiera reprezentację zależnie od reguły uczenia.
 
 - **Hebb (`LargeHopfield`)** przechowuje wzorce i oblicza iloczyny skalarne $u_p$, gdzie $u_p=n m_p$. Przy ustalaniu znaku pola program pomija wspólny dodatni czynnik $1/n$. Po aktualizacji asynchronicznej neuronu $k$ zwiększa $u_p$ o $x_k^{(p)}\Delta a_k$.
-- **Oja (`GroupedHopfield`)** przypisuje neurony do grup według ich znaków w kolejnych wzorcach. Sygnatury przeciwne trafiają do tej samej grupy z przeciwnym znakiem odniesienia. Każdy piksel zachowuje własny stan. Przy trzech wzorcach powstają najwyżej cztery grupy, podczas gdy pełna macierz `f32` dla 60 000 neuronów zajęłaby około 14,4 GB. Test jednostkowy porównuje wagi i aktualizacje z obliczeniami na pełnej macierzy.
+- **Oja (`GroupedHopfield`)** przypisuje neurony do grup według ich znaków w kolejnych wzorcach. Sygnatury przeciwne trafiają do tej samej grupy z przeciwnym znakiem odniesienia. Każdy piksel zachowuje własny stan. Przy trzech wzorcach powstają najwyżej cztery grupy.
 
 $$
 u_p=\bigl(\mathbf x^{(p)}\bigr)^\top\mathbf a,
@@ -143,13 +139,11 @@ $$
 
 | Metryka | Warunek lub sposób liczenia |
 | --- | --- |
-| Stabilność wzorca | Żaden piksel oryginału nie zmienia się w pierwszym kroku synchronicznym. |
-| Dokładny odzysk | Sieć kończy w punkcie stałym identycznym z oryginałem. |
+| Stabilność wzorca | Podajemy oryginał bez szumu. Jeśli pierwszy krok synchroniczny nie zmienia żadnego piksela, kolejne kroki także pozostawią ten stan bez zmian. |
+| Dokładny odzysk | Podajemy zaszumioną kopię i sprawdzamy, czy sieć zatrzymuje się na obrazie identycznym z oryginałem. |
 | Zgodność pikseli | Odsetek pikseli równych oryginałowi w ostatniej zapisanej klatce, także po nieudanym odzysku. |
 
-W głównych próbach losowo odwracaliśmy 0, 10, 20, 30, 40 lub 50% pikseli. Dla każdego wzorca i poziomu wykonaliśmy 10 prób. Generator zaczynał od ziarna 42. W eksperymentach 2–5 wykorzystywaliśmy kolejne realizacje generatora, a w eksperymencie 7 te same uszkodzenia dla każdej reguły i każdego trybu. [Pełne wyniki](docs/wyniki.txt)
-
-W tabelach średnie podobieństwo par liczymy jako średnią wartości $\lvert m_p\rvert$ po parach różnych wzorców. Dla pary $(p,q)$ jako stan $\mathbf a$ podstawiamy $\mathbf x^{(q)}$. Znak $m_p$ zachowujemy, gdy analizujemy wpływ wspólnego bloku lub szumu na konkretne wejście.
+W głównych próbach losowo odwracaliśmy 0, 10, 20, 30, 40 lub 50% pikseli. Dla każdego wzorca i poziomu wykonaliśmy po 10 prób. Ziarno generatora wynosiło 42. W tabelach średnie podobieństwo par to średnia wartość bezwzględna $m_p$ dla różnych par wzorców.
 
 ## 4. Eksperymenty
 
@@ -168,11 +162,11 @@ W tabelach średnie podobieństwo par liczymy jako średnią wartości $\lvert m
 | letters-abc-8x12 | 0,806 | 0/3 | 3/3 |
 | small-7x7 | 0,286 | 3/5 | 5/5 |
 
-**Interpretacja.** Oja zachowała komplet w siedmiu zbiorach. W najtrudniejszym zbiorze 26 liter 46,4% pozycji ma wspólny kolor we wszystkich wzorcach. Czarnych pikseli jest średnio tylko 14,4%, więc wspólne tło ma duży wpływ na pole neuronu. Przy dużym przesłuchu zmieniają się piksele rozróżniające litery. W zbiorze ABC z trzema wzorcami Oja utrzymała wszystkie obrazy pomimo wyższego średniego podobieństwa. Pokazuje to, że znaczenie mają zarówno podobieństwo, jak i liczność zbioru [1, 2, 4].
+**Interpretacja.** Reguła Oji zachowała komplet wzorców w siedmiu zbiorach. W zbiorze 26 liter 46,4% pozycji ma wspólny kolor. Wspólne tło zwiększa przesłuch, który może odwrócić znaki pikseli odróżniających litery [2, 6, slajd 22]. W zbiorze ABC reguła Oji zachowała wszystkie trzy obrazy mimo wyższego średniego podobieństwa. Na stabilność wpływają zarówno korelacje, jak i liczba wzorców.
 
-### 4.2. Ten sam wzorzec w rozmiarze 25×25 i 25×50
+### 4.2. Wzorce 25×25 i 25×50 ze wspólnym blokiem
 
-**Metoda.** Górne połówki 25×50 są identyczne z odpowiednimi obrazami 25×25, a dolne są czarne. W kontroli zastąpiliśmy dolną połowę niezależnie losowanymi pikselami. Wspólny blok wnosi do iloczynu skalarnego tyle jedynek, ile pikseli zawiera górna połowa.
+**Metoda.** Górne połówki obrazów 25×50 odpowiadają obrazom 25×25, a dolne są czarne. W próbie kontrolnej wypełniliśmy dolną połowę każdego wzorca niezależnie losowanymi pikselami. Wspólny czarny blok dodaje do iloczynu skalarnego 625, a łączna liczba pikseli rośnie z 625 do 1250.
 
 $$
 m_p^{(25\times 50)} = \frac{m_p^{(25\times 25)}+1}{2}.
@@ -184,7 +178,7 @@ $$
 | 25×50, wspólny blok | 0,567 | 0/6 | 0% / 0% | 6/6 | 100% / 100% |
 | 25×50, losowy blok | 0,076 | 6/6 | 100% / 100% | 6/6 | 100% / 100% |
 
-Odzysk w tabeli zmierzono przy 20% szumu. Przy tej samej liczbie neuronów i wzorców losowy blok przywrócił skuteczność Hebba. Wspólna czerń zwiększa podobieństwo i potęguje przesłuch w górnej połowie.
+Odzysk zmierzyliśmy przy 20% szumu. Wspólny blok zwiększył podobieństwo wzorców, a przez to przesłuch także w górnej połowie obrazu. Losowy blok przywrócił skuteczność reguły Hebba przy tej samej liczbie neuronów i wzorców.
 
 ### 4.3. Liczność zbioru, poziom szumu i rodzaj uszkodzeń
 
@@ -195,7 +189,7 @@ Odzysk w tabeli zmierzono przy 20% szumu. Przy tej samej liczbie neuronów i wzo
 | Oja sync przy 20%, 30% i 40% szumu | `small-7x7` osiągnął 100%, 74%, 18%. `large-25x25.plus` osiągnął 100% przy każdym z tych poziomów. |
 | Losowy szum 20% i biały pas około 20% powierzchni, Hebb async | Dla 25×25 wynik spadł z 43% do 33%, a dla zwierząt z 12% do 7%. |
 
-**Interpretacja.** Każdy nowy wzorzec zmienia zarówno liczność, jak i korelacje w zbiorze. Biały pas usuwa fragment figury w jednym miejscu, a szum rozrzuca błędy po obrazie. Na pełnym zbiorze liter 14×20 obie reguły miały 0% dokładnego odzysku, choć przy 20% szumu końcowe obrazy miały około 90% zgodnych pikseli.
+**Interpretacja.** Na pełnym zbiorze liter 14×20 żadna reguła nie odtworzyła całego oryginału, choć przy 20% szumu końcowe obrazy miały około 90% zgodnych pikseli.
 
 ### 4.4. Zbiory z grupami podobnych wzorców
 
@@ -208,7 +202,7 @@ Odzysk w tabeli zmierzono przy 20% szumu. Przy tej samej liczbie neuronów i wzo
 | 8 | zróżnicowany | 0,093 | 8/8 | 90% | 100% |
 | 8 | grupy | 0,292 | 0/8 | 0% | 100% |
 
-Odzysk mierzono przy 20% szumu w trybie asynchronicznym. Oja zachowała wszystkie wzorce w czterech podzbiorach. W każdej z 60 i 80 prób Hebba na zbiorach z grupami wynik był stanem pasożytniczym, czyli punktem stałym spoza wzorców i ich negatywów.
+Odzysk zmierzyliśmy przy 20% szumu w trybie asynchronicznym. Reguła Oji zachowała wszystkie wzorce w czterech podzbiorach.
 
 ### 4.5. Losowe wejście
 
@@ -221,13 +215,13 @@ Odzysk mierzono przy 20% szumu w trybie asynchronicznym. Oja zachowała wszystki
 | Litery 14×20, Oja sync | 0 | 0 | 1 | 99 |
 | Litery 14×20, Oja async | 0 | 0 | 100 | 0 |
 
-**Interpretacja.** Losowy wektor może trafić do obszaru przyciągania oryginału, negatywu, stanu pasożytniczego lub cyklu. Negatywy wynikają z symetrii modelu. Odwrócenie wszystkich znaków odwraca pola i nie zmienia energii.
+**Interpretacja.** Losowe wejście może prowadzić do oryginału, jego negatywu, stanu pasożytniczego lub cyklu. W tabeli stan pasożytniczy oznacza punkt stały spoza zbioru wzorców uczących i ich negatywów. Przy zerowym pobudzeniu zewnętrznym odwrócenie wszystkich znaków odwraca pola i nie zmienia energii, więc negatyw punktu stałego też jest punktem stałym [6, slajd 25].
 
 ### 4.6. Własne wzorce 5×5 i cykl dwustanowy
 
-**Zbiór sprawdzony programem.** Plik `src/own/stable-5x5.csv` zawiera 19 prawie ortogonalnych wzorców opartych na macierzy Hadamarda. Hebb utrzymał 19/19, a Oja 10/19. Minimalny margines Hebba wyniósł $2/25$ po uwzględnieniu normalizacji wag.
+**Zbiór sprawdzony programem.** Plik `src/own/stable-5x5.csv` zawiera 19 wzorców. Po uczeniu regułą Hebba stabilnych było 19 z 19, a po uczeniu regułą Oji 10 z 19. Minimalny margines Hebba wyniósł $2/25$ po uwzględnieniu normalizacji wag.
 
-**Liczna rodzina stabilna ściśle.** W pierwszych 22 pozycjach wybieramy dowolne 11 pikseli o wartości +1. Pozostałe mają −1. Ostatnie trzy piksele mają wspólny znak, wybierany niezależnie od pierwszej części.
+**Konstrukcja ściśle stabilnego zbioru.** W pierwszych 22 pozycjach wybieramy dowolne 11 pikseli o wartości $+1$. Pozostałe mają wartość $-1$. Ostatnie trzy piksele mają wspólny znak, wybierany niezależnie od pierwszego bloku.
 
 $$
 \begin{aligned}
@@ -244,7 +238,7 @@ W każdym wzorcu pierwsze 22 piksele sumują się do zera. Stąd średni iloczyn
 
 Jeśli dopuszczamy zerową preaktywację, wzorce z dokładnie 12 lub 13 pikselami $+1$ dają $2\binom{25}{12}=10\,400\,600$ punktów stałych. Ujemna waga między dowolnymi dwoma pikselami daje wtedy zerowe pole na pikselach większościowych i pole o właściwym znaku na pozostałych. Formalne maksimum to wszystkie $2^{25}=33\,554\,432$ bitmapy. Wówczas wkłady się znoszą, $\mathbf W=\mathbf 0$, więc każde uszkodzenie także pozostaje bez zmian.
 
-**Cykl.** Hebba uczymy na krzyżu i znaku X. Na wejście podajemy ramkę. Znak `#` oznacza czarny piksel.
+**Cykl.** Sieć uczymy regułą Hebba na krzyżu i znaku X. Na wejście podajemy ramkę. Znak `#` oznacza czarny piksel.
 
 ```text
 Wejście    Krok 1    Krok 2
@@ -259,7 +253,7 @@ W obu stanach iloczyn skalarny z każdym wzorcem uczącym wynosi $-9$, więc $m_
 
 ### 4.7. Bitmapy 200×300
 
-**Dane.** Użyliśmy fotografii `camera`, `coins` i `moon` z scikit-image 0.24.0. Po konwersji do skali szarości zastosowaliśmy centralny kadr, skalowanie Lanczosem i progi jasności 152, 89 oraz 112. Średnie podobieństwo par wyniosło 0,159. Obie reguły utrzymały 3/3 wzorców. [Dokumentacja scikit-image](https://scikit-image.org/docs/0.24.x/api/skimage.data.html) · [Bitmapy i źródła](src/large/)
+**Dane.** Użyliśmy fotografii `camera`, `coins` i `moon` z pakietu scikit-image 0.24.0 [7]. Po konwersji do skali szarości wykadrowaliśmy obrazy centralnie i przeskalowaliśmy je filtrem Lanczosa do 200×300. Przy binaryzacji użyliśmy progów jasności odpowiednio 152, 89 i 112. Średnie podobieństwo par wyniosło 0,159. Po uczeniu każdą z reguł wszystkie trzy wzorce były stabilne.
 
 | Reguła i tryb | Dokładne przy 0–40% szumu | Dokładne przy 50% | Zgodne piksele przy 50% |
 | --- | ---: | ---: | ---: |
@@ -274,7 +268,7 @@ $$
 m_q=\frac{\bigl(\mathbf x^{(q)}\bigr)^\top\tilde{\mathbf x}}{n}=1-\frac{2d}{n}.
 $$
 
-Przy 40% szumu $m_q=0{,}2$, a przy 50% spada do zera. Wynik dotyczy trzech obrazów przy małym obciążeniu $\alpha=N/n=0{,}00005$.
+Przy 40% szumu $m_q=0{,}2$, a przy 50% spada do zera.
 
 ## 5. Wnioski
 
@@ -298,7 +292,8 @@ Aby obejrzeć cykl dwustanowy, generujemy HTML i otwieramy go w przeglądarce.
 cargo run --release -- viz src/own/oscillation-train-5x5.csv 0 hebb sync 0 target/cycle.html src/own/oscillation-input-5x5.csv
 ```
 
-[Instrukcja programu](docs/uruchomienie.md) · [Pełny zapis wyników](docs/wyniki.txt)
+
+[Instrukcja programu](docs/launch.md) · [Pełny zapis wyników](docs/results.txt)
 
 ## Literatura
 
@@ -308,3 +303,4 @@ cargo run --release -- viz src/own/oscillation-train-5x5.csv 0 hebb sync 0 targe
 4. E. Oja (1989), *Neural Networks, Principal Components, and Subspaces*, International Journal of Neural Systems 1(1), 61–68. [DOI](https://doi.org/10.1142/S0129065789000475)
 5. E. Goles, J. Olivos (1980), *Periodic behaviour of generalized threshold functions*, Discrete Mathematics 30(2), 187–189. [DOI](https://doi.org/10.1016/0012-365X(80)90121-1)
 6. M. Małkiński, *Neural Networks — Lecture 5: Hopfield Model and Associative Memories*, Politechnika Warszawska. Slajdy 3, 6, 8–9, 13, 16, 18–19, 22–23, 27–28 i 33.
+7. Zespół scikit-image, *skimage.data* (dokumentacja wersji 0.24.x). Opisy obrazów `camera`, `coins` i `moon`. [Dokumentacja scikit-image](https://scikit-image.org/docs/0.24.x/api/skimage.data.html)

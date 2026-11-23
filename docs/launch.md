@@ -9,7 +9,7 @@ cargo run --release -- 7
 cargo run --release -- 1 2 3 4 5 6 7
 ```
 
-With no arguments, the program runs experiments 1–6. Experiment 7 evaluates three 200×300 bitmaps using both learning rules and both update modes. You can pass several experiment numbers in one command. [Report in Polish](../RAPORT.md) · [Full results](wyniki.txt)
+With no arguments, the program runs experiments 1–6. Experiment 7 evaluates three 200×300 bitmaps using both learning rules and both update modes. You can pass several experiment numbers in one command. [Report in Polish](../RAPORT.md) · [Full results](results.txt)
 
 ## Visualization
 
